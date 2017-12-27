@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_main"
+            android:icon="@android:drawable/ic_dialog_dialer"
+            android:title="メイン画面" />
+        <item
+            android:id="@+id/nav_conected"
+            android:icon="@android:drawable/ic_popup_sync"
+            android:title="現在の接続先" />
+        <item
+            android:id="@+id/nav_prefarence"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="設定"
+            app:showAsAction="always|withText" />
+    </group>
+
+    <item
+        android:title="Communicate"
+        app:showAsAction="collapseActionView">
+        <menu>
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_menu_share"
+                android:title="登録済みログの表示"
+                app:showAsAction="collapseActionView" />
+            <item
+                android:id="@+id/nav_send"
+                android:icon="@drawable/ic_menu_send"
+                android:title="今すぐ保存する" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/nav_quit"
+        android:icon="@android:drawable/ic_lock_power_off"
+        android:title="終了"
+        app:showAsAction="always" />
+
+</menu>

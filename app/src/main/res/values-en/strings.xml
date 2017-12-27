@@ -1,0 +1,109 @@
+<resources>
+    <string name="app_name">NULoger</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Setting</string>
+    <!--<string name="action_quit">Quit</string>-->
+    <string-array name="step_list">
+        <item>5</item>
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+        <item>600</item>
+    </string-array>
+    <string-array name="one_condition">
+        <item>BSSID =00:a1:b2:c3:d4:e5 </item>
+        <item>MOdel =501SO</item>
+        <item>OS=6.0</item>
+    </string-array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="comon_fumei">Ignorance</string>
+    <string name="comon_meisettei">Unestablished</string>
+    <string name="comon_mfz">[MHz]</string>
+    <string name="comon_dbm">[dBm]</string>
+    <string name="comon_tojiru">Close</string>
+
+    <string name="menu_kinu">Function</string>
+    <string name="menu_kinu_saikensaku">Re-search</string>
+    <string name="menu_item_sonota">Others</string>
+    <string name="menu_item_sonota_help">Help indication</string>
+    <string name="menu_item_sonota_settei">Setting</string>
+    <string name="menu_sonota_settei_syoukyo">Setting removal</string>
+    <string name="menu_item_sonota_end">quit</string>
+
+
+    <string name="mp_setuzokujyoukyou">The connection situation</string>
+    <string name="mp_kennnainokiki">Apparatus of the range</string>
+    <string name="mp_setuzokukanoui">Accessible；</string>
+    <string name="mp_sai_scan">Re-scan</string>
+    <string name="mp_list_lavel">SSID(BSSID)Channel frequency , Signal level[dBm]</string>
+    <string name="mp_list_lavel2">;;In the case of a blank, it is an BSSID</string>
+
+    <string name="info_a_menu_setuzoku">I search neighboring Wi-Fi apparatuses</string><!-- -->
+    <string name="info_a_menu_rireki">Connection history</string><!-- -->
+
+    <string name="wifi_on">Wi-Fi On</string>
+    <string name="wifi_off">Wi-Fi Off</string>
+
+    <string name="wifistate_disabled">Unusable</string>
+    <string name="wifistate_disabling"> state "to make unusable"</string>
+    <string name="wifistate_enabled">Available</string>
+    <string name="wifistate_enabling"> state "to make available"</string>
+    <!--       <string name="wifistate_">wifiState;</string> -->
+
+    <string name="info_a_bssid">BSSID</string><!--       BSSID\(APのMACアドレス) -->
+    <string name="info_a_ssid">SSID</string><!-- SSID(ネットワーク名)</string> -->
+    <string name="info_a_capabilities">Capabilities</string><!-- capabilities(暗号化情報)</string> -->
+    <string name="info_a_frequency">frequency</string><!-- frequency(チャンネル周波数)</string> -->
+    <string name="info_a_level">level</string><!-- level(信号レベル())</string> -->
+
+    <string name="info_a_allowed_auth_algorithms">auth algorithms</string>
+    <string name="info_a_allowed_allowed_group_ciphers">allowed group_ciphers</string>
+    <string name="info_a_allowed_allowed_key_management">key management</string>
+    <string name="info_a_allowed_allowed_pairwise_ciphers">pairwise ciphers</string>
+    <string name="info_a_allowed_protocols">protocols</string>
+    <string name="info_a_allowed_enterprise_config">EAP enterprise config</string>
+    <string name="info_a_pre_shared_key">WPA-PSK shared key</string>
+    <string name="info_a__prioritye">prioritye</string>
+    <string name="info_a_status">status</string>
+    <string name="info_a_wep_keys">wep keys</string>
+    <string name="info_a_wep_txKey_index">wep txKey index</string>
+
+    <string name="konotannmatu">Information of this terminal</string><!--getIpAddress -->
+    <string name="info_a_ip_address">ip address</string><!--getIpAddress -->
+    <string name="info_a_net_work_id">net work id</string><!--getNetworkId -->
+    <string name="info_a_get_rssi">rssi</string><!-- -->
+    <string name="info_a_signal_level">signal level</string>
+    <string name="info_a_hidden_ssid">hidden ssid</string><!--getHiddenSSID() -->
+    <string name="info_a_link_speed">link speed</string><!--getLinkSpeed() -->
+    <string name="info_a_supp_state">supp state</string><!--getDetailedStateOf(SupplicantState ) -->
+    <string name="supp_authnticating">authnticating</string><!--	Network link established, performing authentication. -->
+    <string name="supp_bloced">bloced</string><!--		Access to this network is blocked. -->
+    <string name="supp_connected">	connected</string><!--	IP traffic should be available.-->
+    <string name="supp_connecting">connecting</string><!--	Currently setting up data connection.-->
+    <string name="supp_disconnected">IP traffic disconnected</string><!--		IP traffic not available.-->
+    <string name="supp_disconnecting">disconnecting</string><!--Currently tearing down data connection..-->
+    <string name="supp_failed">failed</string><!--Attempt to connect failed..-->
+    <string name="supp_idle">idle</string><!--	Ready to start data connection setup.-->
+    <string name="supp_obtaing_ipaddr">obtaing_ipaddr</string><!--	Awaiting response from DHCP server in order to assign IP address information.-->
+    <string name="supp_scanning">scanning</string><!--		Searching for an available access point.-->
+    <string name="supp_suspended">suspended</string><!--			IP traffic is suspended-->
+
+
+    <string name="info_a_name">The name that I set</string>
+    <string name="info_a_setuzoku">connection</string>
+    <string name="info_a_setudann">disconnect</string>
+
+
+
+
+</resources>

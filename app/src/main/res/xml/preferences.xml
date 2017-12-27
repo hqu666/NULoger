@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:defaultValue="false"
+        android:key="student_id"
+        android:summary="1234567890"
+        android:title="実施者ID（学籍番号）" />
+    <EditTextPreference
+        android:defaultValue="false"
+        android:key="server_url"
+        android:summary="https://drive.google.com/drive/my-drive"
+        android:title="保存先サーバ" />
+    <EditTextPreference
+        android:defaultValue="false"
+        android:key="save_name"
+        android:summary="meidai_ap_log"
+        android:title="保存名" />
+    <EditTextPreference
+        android:defaultValue="false"
+        android:key="save_cout"
+        android:summary="500"
+        android:title="1日のデータ数" />
+    <ListPreference
+        android:key="key"
+        android:defaultValue="sample-value1"
+        android:entries="@array/one_condition"
+        android:entryValues="@array/one_condition"
+        android:summary="MACアドレス =00:a1:b2:c3:d4:e5"
+        android:title="この端末の情報" />
+</PreferenceScreen>

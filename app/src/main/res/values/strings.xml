@@ -1,0 +1,107 @@
+<resources>
+    <string name="app_name">NULoger</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">設定</string>
+
+    <string-array name="step_list">
+        <item>5</item>
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+        <item>600</item>
+    </string-array>
+    <string-array name="one_condition">
+        <item>MACアドレス =00:a1:b2:c3:d4:e5 </item>
+        <item>モデル番号  =501SO</item>
+        <item>OSバージョン=6.0</item>
+    </string-array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="comon_fumei">不明</string>
+    <string name="comon_meisettei">未設定</string>
+    <string name="comon_mfz">[MHz]</string>
+    <string name="comon_dbm">[dBm]</string>
+    <string name="comon_tojiru">閉じる</string>
+
+    <string name="menu_kinu">機能</string>
+    <string name="menu_kinu_saikensaku">再検索</string>
+    <string name="menu_item_sonota">その他</string>
+    <string name="menu_item_sonota_help">ヘルプ表示</string>
+    <string name="menu_item_sonota_settei">設定</string>
+    <string name="menu_sonota_settei_syoukyo">設定消去</string>
+    <string name="menu_item_sonota_end">終了	</string>
+
+
+    <string name="mp_setuzokujyoukyou">接続状況</string>
+    <string name="mp_kennnainokiki">圏内の機器</string>
+    <string name="mp_setuzokukanoui">接続可能；</string>
+    <string name="mp_sai_scan">再スキャン</string>
+    <string name="mp_list_lavel">ネットワーク名(MACアドレス)チャンネル周波数[MHz] , 信号レベル[dBm]</string>
+    <string name="mp_list_lavel2">;;空白の場合はMACアドレス</string>
+
+    <string name="info_a_menu_setuzoku">周辺のWi-Fi機器を検索</string><!-- -->
+    <string name="info_a_menu_rireki">接続履歴</string><!-- -->
+
+    <string name="wifi_on">Wi-Fi On</string>
+    <string name="wifi_off">Wi-Fi Off</string>
+
+    <string name="wifistate_disabled">使用不可</string>
+    <string name="wifistate_disabling">「使用不可にする」をしている状態</string>
+    <string name="wifistate_enabled">使用可能</string>
+    <string name="wifistate_enabling"> 「使用可能にする」をしている状態</string>
+    <!--       <string name="wifistate_">wifiState;</string> -->
+
+    <string name="info_a_bssid">MACアドレス</string><!--       BSSID\(APのMACアドレス) -->
+    <string name="info_a_ssid">ネットワーク識別名</string><!-- SSID(ネットワーク名)</string> -->
+    <string name="info_a_capabilities">暗号化情報</string><!-- capabilities(暗号化情報)</string> -->
+    <string name="info_a_frequency">チャンネル周波数</string><!-- frequency(チャンネル周波数)</string> -->
+    <string name="info_a_level">信号レベル</string><!-- level(信号レベル())</string> -->
+
+    <string name="info_a_allowed_auth_algorithms">認証プロトコルセット</string>
+    <string name="info_a_allowed_allowed_group_ciphers">グループの暗号セット</string>
+    <string name="info_a_allowed_allowed_key_management">キー管理プロトコルのセット</string>
+    <string name="info_a_allowed_allowed_pairwise_ciphers">WPAのための暗号とのペア情報</string>
+    <string name="info_a_allowed_protocols">セキュリティプロトコルのセット</string>
+    <string name="info_a_allowed_enterprise_config">EAP関連の詳細情報</string>
+    <string name="info_a_pre_shared_key">WPA-PSKのキー</string>
+    <string name="info_a__prioritye">優先度</string>
+    <string name="info_a_status">ネットワークの状態</string>
+    <string name="info_a_wep_keys">WEPキー</string>
+    <string name="info_a_wep_txKey_index">WEPキーのインデックス</string>
+
+    <string name="konotannmatu">この端末の情報</string><!--getIpAddress -->
+    <string name="info_a_ip_address">IPアドレス</string><!--getIpAddress -->
+    <string name="info_a_net_work_id">ネットワークID</string><!--getNetworkId -->
+    <string name="info_a_get_rssi">受信信号強度</string><!-- -->
+    <string name="info_a_signal_level">信号レベル</string><!--(rssi, 5);			// を取得 -->
+    <string name="info_a_hidden_ssid">ステルスモード</string><!--getHiddenSSID() -->
+    <string name="info_a_link_speed">リンクスピード</string><!--getLinkSpeed() -->
+    <string name="info_a_supp_state">サプリカント</string><!--getDetailedStateOf(SupplicantState ) -->
+    <string name="supp_authnticating">確立されるネットワーク・リンク（認証を実行する） </string><!--	Network link established, performing authentication. -->
+    <string name="supp_bloced">アクセスしたらブロックされました</string><!--		Access to this network is blocked. -->
+    <string name="supp_connected">	IP trafficは利用できなければなりません</string><!--	IP traffic should be available.-->
+    <string name="supp_connecting">データ接続準備中。</string><!--	Currently setting up data connection.-->
+    <string name="supp_disconnected">IP trafficは御利用頂けません。.</string><!--		IP traffic not available.-->
+    <string name="supp_disconnecting">データ接続を解除中です。</string><!--Currently tearing down data connection..-->
+    <string name="supp_failed">接続に失敗しました。</string><!--Attempt to connect failed..-->
+    <string name="supp_idle">データ接続セットアップを始める準備をさせてください。</string><!--	Ready to start data connection setup.-->
+    <string name="supp_obtaing_ipaddr">IPアドレスに情報を割り当てるためにDHCPサーバーからの返答を待っています。</string><!--	Awaiting response from DHCP server in order to assign IP address information.-->
+    <string name="supp_scanning">利用できるアクセス・ポイントを捜しています。</string><!--		Searching for an available access point.-->
+    <string name="supp_suspended">切断されました</string><!--			IP traffic is suspended-->
+
+
+    <string name="info_a_name">設定した名称</string>
+    <string name="info_a_setuzoku">接続</string>
+    <string name="info_a_setudann">切断</string>
+
+
+</resources>
