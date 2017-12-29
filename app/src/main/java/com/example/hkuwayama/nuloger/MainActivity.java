@@ -3,6 +3,7 @@ package com.example.hkuwayama.nuloger;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -33,6 +34,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -55,6 +57,8 @@ import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.services.drive.DriveScopes;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -63,9 +67,41 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+
+import android.accounts.AccountManager;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.http.ByteArrayContent;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.json.gson.GsonFactory;
+//import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
+
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 //  {
@@ -127,14 +163,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 			return true;
 
 		} else if ( id == R.id.action_quit ) {               //終了
-			callSQuit();
+			callQuit();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
 
 
-	public void callSQuit() {
+	public void callQuit() {
 		if ( googleApiClient != null ) {
 			googleApiClient.disconnect();                  // 接続解除
 		}
@@ -157,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		} else if ( id == R.id.nav_share ) {
 			makeList();
 		} else if ( id == R.id.nav_quit ) {
-			callSQuit();
+			callQuit();
 		}
 		DrawerLayout drawer = ( DrawerLayout ) findViewById(R.id.drawer_layout);
 		drawer.closeDrawer(GravityCompat.START);
@@ -170,8 +206,55 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		setMainVeiw();          //メイン画面の設定
 	}
 
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		final String TAG = "onKeyDown";
+		String dbMsg = "開始";
+		try {
+			dbMsg = "keyCode=" + keyCode;//+",getDisplayLabel="+String.valueOf(MyEvent.getDisplayLabel())+",getAction="+MyEvent.getAction();////////////////////////////////
+			myLog(TAG, dbMsg);
+			switch ( keyCode ) {    //キーにデフォルト以外の動作を与えるもののみを記述★KEYCODE_MENUをここに書くとメニュー表示されない
+				case KeyEvent.KEYCODE_BACK:            //4KEYCODE_BACK :keyCode；09SH: keyCode；4,MyEvent=KeyEvent{action=0 code=4 repeat=0 meta=0 scancode=158 mFlags=72}
+					callQuit();
+					return true;
+//				case KeyEvent.KEYCODE_HOME:            //3
+////					ComponentName compNmae = startService(new Intent(MainActivity.this, NotificationChangeService.class));                           //     makeNotificationを持つクラスへ
+////					dbMsg = "compNmae=" + compNmae;     //compNmae=ComponentInfo{hijiyama_koubou.com.residualquantityofthesleep/hijiyama_koubou.com.residualquantityofthesleep.NotificationChangeService}
+////						NotificationManager mNotificationManager = ( NotificationManager ) mainActivity.getSystemService(NOTIFICATION_SERVICE);
+////						mNotificationManager.cancel(NOTIFICATION_ID);            //サービスの停止時、通知内容を破棄する
+//					myLog(TAG, dbMsg);
+//					return true;
+				default:
+					return false;
+			}
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+			return false;
+		}
+	}
+
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		final String TAG = "dispatchKeyEvent";
+		int keyCode = event.getKeyCode();
+		String dbMsg = "keyCode=" + String.valueOf(keyCode);
+		boolean retBool = false;
+		try {
+			dbMsg = dbMsg + ",getAction=" + event.getAction();////////////////////////////////
+			dbMsg = dbMsg + ",retBool=" + retBool;
+			myLog(TAG, dbMsg);
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		if ( retBool ) {
+			return true;        //Activityを終了せずに何もしないようにするには親クラスのdispatchKeyEvent()を呼び出さずにtrueを返すようにします。
+		} else {
+			return super.dispatchKeyEvent(event);
+		}
+	}
+
 	//RuntimeParmission///////////////////////////////////////////////////////////////////////////////////
-	///RuntimeParmission        0x11?
 	public static int rp_inet = 0x11;        //データ送受信
 	public static int rp_strage = 0x21;      //データ保存
 	public static int rp_setting = 0x22;      //設定保存
@@ -228,6 +311,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		} else if ( writeExternalStorage != PackageManager.PERMISSION_GRANTED ) {
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE ,}, rp_getGPSInfo);
 		} else {
+			loadTextFromDrive();                //http://vividcode.hatenablog.com/entry/20130908/1378613811/
 			String titolStr = "現在作成中";
 			String mggStr = "ログのリストアップは現在考案中です";
 			messageShow(titolStr, mggStr);
@@ -408,28 +492,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					int setuzokuCount = 0;
 					for ( int i = 0 ; i < apList.size() ; i++ ) {
 						dbMsg = i + "/" + apList.size() + ")";
-//                            if (infoList == null) {
-//                                infoList = new ArrayList<String>();
-//                                }
-//                        if (-1 < latitudeVal) {         // 緯度の表示
-//                            aps[i] = latitudeStr;       // 緯度
-//                        } else {
-//                            aps[i] = "GPS Non";
-//                        }
-//                        if (-1 < longitudeVal) {         //   = -1;       // 経度の表示
-//                            aps[i] = aps[i] + "," + LongtudeStr;    // 経度
-//                        }
-//                        if (-1 < altitudeVal) {         // = -1;                //標高
-//                            aps[i] = aps[i] + "," + altitudeStr;    // 標高
-//                        }
-//                        if (-1 < accuracyVal) {         //精度
-//                            aps[i] = aps[i] + "," + accuracyStr;    // 精度
-//                        }
-//                        if (0 < pinpointingTimeVal) {         // = 0;                //測位時刻
-//                            aps[i] = aps[i] + "," + pinpointingTimeValStr;   // 測位時刻
-//                        }
-						aps[i] = "BSSID:" + apList.get(i).BSSID;
-						aps[i] = aps[i] + ",SSID:" + apList.get(i).SSID;
+						aps[i] = ",SSID:" + apList.get(i).SSID;
+						aps[i] = aps[i] + "BSSID:" + apList.get(i).BSSID;
 
 						if ( !apList.get(i).SSID.equals("") ) {                    //SSIDが拾えないものは空白文字が入る
 							setuzokuCount++;
@@ -465,29 +529,166 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 							dbMsg = dbMsg + ",items=" + items;
 							Log.i(TAG, dbMsg);
 							String Listitems = aps[position].replace(",", "\n");
-							new AlertDialog.Builder(MainActivity.this).setTitle(bssid + "の詳細").
-									                                                                  setMessage(Listitems).
-											                                                                                       setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-												                                                                                       @Override
-												                                                                                       public void onClick(DialogInterface dialog, int which) {
-												                                                                                       }
-											                                                                                       }).create().show();
-
+							new AlertDialog.Builder(MainActivity.this).setTitle(bssid + "の詳細").setMessage(Listitems).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog, int which) {
+								}
+							}).create().show();
 							// dlogHyouji(position);                //カスタムダイアログ表示
 						}
 					});
 				}
 			}
-//            ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, infoList);
-//            ap_lv.setAdapter(listAdapter);
-
-			//		}
-
 			Log.i(TAG, dbMsg);
 		} catch (NullPointerException e) {
 			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
 		}
 	}
+
+	public String makeSendList() {
+		final String TAG = "apListUp";
+		String dbMsg = null;
+		String retStr = "取得できてません";
+		try {
+			final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			final Date date = new Date(System.currentTimeMillis());
+			String headLine = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" + 					//APIL1
+					                  ",timestamp" + ",intcenterFreq0" +  ",centerFreq1" + ",channelWidth" + ",operatorFriendlyName" + ",venueName" +		//APIL17,23
+					                  ",latitude" + ",longitude" + ",altitude" + ",accuracy"  + ",pinpointing Time" + ",(IP Address)\n";   					//GPS
+			retStr = headLine + ( String ) student_id_tv.getText() + "," + df.format(date);
+			retStr += getNowConectBody();
+
+			wfManager = ( WifiManager ) MainActivity.this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);        //(android.content.Context.WIFI_SERVICE);
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {                                                                         //APIL23以上
+//                @SuppressLint("WifiManagerLeak") WifiManager manager = (WifiManager) getSystemService(WIFI_SERVICE);
+//                this.wfManager = manager;
+//            }
+			if ( wfManager != null ) {
+				if ( wfManager.isWifiEnabled() == true ) {// if (wfManager.getWifiState() == wfManager.WIFI_STATE_ENABLED) {
+					apList = null;//new List<ScanResult>() ;
+					wfManager.startScan();                         // APをスキャン
+					apList = wfManager.getScanResults();        // スキャン結果を取得
+					int tSize = apList.size();
+					list_up_count_tv.setText(tSize + "件");
+					;  //リストアップ件数
+
+					dbMsg = tSize + "件";
+			//		aps = new String[apList.size()];
+					int setuzokuCount = 0;
+					for ( int i = 0 ; i < apList.size() ; i++ ) {
+						dbMsg = i + "/" + apList.size() + ")";
+						retStr +=  ( String ) student_id_tv.getText() + "," + df.format(date);
+//ScanResultのフィールド	https://developer.android.com/reference/android/net/wifi/ScanResult.html////
+						retStr += ","+ apList.get(i).SSID; 									//String SSID;APIレベル1;ネットワーク名
+						retStr += ","+  apList.get(i).BSSID;									//String BSSID;APIレベル1;アクセスポイントのアドレス。
+//						if ( !apList.get(i).SSID.equals("") ) {                    //SSIDが拾えないものは空白文字が入る
+//							setuzokuCount++;
+//						} else {
+//						}
+						retStr += ","+  apList.get(i).frequency;			//int ;APIレベル1;クライアントがアクセスポイントと通信しているチャネルの主要な20 MHz周波数（MHz単位）。
+						retStr += ","+  apList.get(i).level;	//int ;//APIL1;検出された信号レベル（dBm）。RSSIとも呼ばれます。calculateSignalLevel(int, int)この数値をユーザーに表示できる絶対信号レベルに変換するために使用します。
+						retStr += ","+  apList.get(i).capabilities;			//String ;APIレベル1;アクセスポイントでサポートされている認証、キー管理、および暗号化方式について説明します。
+						retStr += ","+  apList.get(i).timestamp;			//long ;APIレベル17;この結果が最後に確認されたときのタイムスタンプ（ブート以降）。
+						if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
+							retStr += ","+  apList.get(i).centerFreq0;			//int ;APIレベル23:APの帯域幅が20 MHzの場合は使用されませんAPが40,80または160 MHzを使用する場合、APが80 + 80 MHzを使用する場合の中心周波数（MHz）です。これは最初のセグメントの中心周波数）
+							retStr += ","+  apList.get(i).centerFreq1;			//int ;APIレベル23;APの帯域幅が80 + 80 MHzの場合にのみ使用されます.APが80 + 80 MHzを使用する場合、これは2番目のセグメントの中心周波数（MHz単位）です。
+							retStr += ","+  apList.get(i).channelWidth;			//int ;//APIレベル23;APチャネル帯域幅。
+//														//0;CHANNEL_WIDTH_20MHZ、1;CHANNEL_WIDTH_40MHZ、 2;CHANNEL_WIDTH_80MHZ、3;CHANNEL_WIDTH_160MHZ,4;CHANNEL_WIDTH_80MHZ_PLUS_MHZ。
+							retStr += ","+  apList.get(i).operatorFriendlyName;			//	CharSequence ;	//APIレベル23;アクセスポイントが発行したパスポイントオペレータ名を示します。
+							retStr += ","+  apList.get(i).venueName;			//	CharSequence ;APIレベル23;アクセスポイントから発行された会場名を示します。Passpointネットワークでのみ使用可能で、アクセスポイントで公開されている場合にのみ使用できます。
+						}
+						retStr += addGPSFeld(retStr);
+						dbMsg = dbMsg + retStr;
+									Log.i(TAG, dbMsg);
+					}            //for(int i=0; i<apList.size(); i++) {
+
+				}
+			}
+
+			Log.i(TAG, dbMsg);
+		} catch (NullPointerException e) {
+			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
+		}
+		return retStr;
+	}
+
+	public String addGPSFeld(String retStr) {
+		final String TAG = "addGPSFeld";
+		String dbMsg = null;
+		if ( -1 < latitudeVal ) {         // 緯度の表示
+			retStr += "" +latitudeVal;
+		//	infoList.add(latitudeStr);// 緯度
+		}
+		if ( -1 < longitudeVal ) {         //   = -1;       // 経度の表示
+			retStr += "" +longitudeVal;
+//			infoList.add(LongtudeStr);// 経度
+		}
+		if ( -1 < altitudeVal ) {         // = -1;                //標高
+			retStr += "" +altitudeVal;
+	//		infoList.add(altitudeStr);// 標高
+		}
+		if ( -1 < accuracyVal ) {         //精度
+			retStr += "" +accuracyVal;
+			infoList.add(accuracyStr);// 精度
+		}
+		if ( 0 < pinpointingTimeVal ) {         // = 0;                //測位時刻
+			retStr += "" +pinpointingTimeVal;
+			infoList.add(pinpointingTimeValStr);// 測位時刻
+		}
+
+		return retStr;
+	}
+
+	///接続先情報を ,　区切りの１行で返す
+	public String getNowConectBody() {                //
+		final String TAG = "getNowConectBody";
+		String dbMsg = null;
+		String mggStr = "表示できる情報はありません。" + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + ",";
+		mggStr += ( String ) latitude_tv.getText() + "," + latitude_tv.getText() + "\n";
+
+		try {
+			if ( wfManager != null ) {
+				if ( wfManager.isWifiEnabled() == true ) {// if (wfManager.getWifiState() == wfManager.WIFI_STATE_ENABLED) {
+					WifiInfo info = wfManager.getConnectionInfo();
+
+					//						//WifiConfigurationのフィールド		https://developer.android.com/reference/android/net/wifi/WifiConfiguration.html
+					mggStr = info.getSSID();            //APIレベル1;ネットワークのSSID。二重引用符（たとえば"MyNetwork"）で囲まれたASCII文字列、または引用符で囲まれていない16進数の文字列（たとえば、）のいずれかにすることができます01a243f405。            String.format("SSID : %s", info.getSSID());    //　SSIDを取得
+					mggStr += info.getBSSID();        //String BSSID;APIレベル1;設定されている場合、このネットワーク構成エントリは、指定されたBSSIDを持つAPに関連付けるときにのみ使用する必要があります。値は、イーサネットMACアドレスの形式の文字列です（例： XX:XX:XX:XX:XX:XX各X16進数）。
+					mggStr += "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + ",";
+
+//						BitSet allowedAuthAlgorithms		//APIレベル1;この構成でサポートされている一連の認証プロトコル。WifiConfiguration.AuthAlgorithm値の説明を参照してください。デフォルトは自動選択です。
+//						BitSet allowedGroupCiphers			//APIレベル1;この設定でサポートされているグループ暗号のセット。WifiConfiguration.GroupCipher値の説明を参照してください。デフォルトはCCMP TKIP WEP104 WEP40です。
+//						BitSet allowedKeyManagement			//APIレベル1;この構成でサポートされる鍵管理プロトコルのセット。WifiConfiguration.KeyMgmt値の説明を参照してください。デフォルトはWPA-PSK WPA-EAPです。
+//						BitSet allowedPairwiseCiphers		//APIレベル1;この構成でサポートされているWPAのペアワイズ暗号のセット。WifiConfiguration.PairwiseCipher値の説明を参照してください。デフォルトはCCMP TKIPです。
+//						BitSet allowedProtocols				//APIレベル1;この設定でサポートされているセキュリティプロトコルのセット。WifiConfiguration.Protocol値の説明を参照してください。デフォルトはWPA RSNです。
+//						boolean hiddenSSID;					//APIレベル1;これはSSIDをブロードキャストしないネットワークなので、スキャンにSSID固有のプローブ要求を使用する必要があります。
+//						int networkId;						//APIレベル1;サプリカントがこのネットワーク構成エントリを識別するために使用するID番号。これは、ほとんどの呼び出しをサプリカントに引き渡すために引数として渡されなければなりません。
+//						String preSharedKey;						//APIレベル1;WPA-PSKで使用する事前共有キー。二重引用符で囲まれたASCII文字列（たとえば、"abcdefghij"PSKパスフレーズまたはraw PSKの64桁の16進数の文字列）。
+//						int status;									//APIレベル;このネットワーク構成エントリの現在のステータス。
+//						String[] wepKeys;							//APIレベル1;最大4つのWEPキー。二重引用符で囲まれたASCII文字列（たとえば、"abcdef"）または16進数の文字列（たとえば、0102030405）。
+//				                                                        		//これらのキーの1つの値が読み取られると、実際のキーは返されず、キーに値がある場合は「*」、それ以外の場合はnull文字列が返されます。
+//						int wepTxKeyIndex;							//APIレベル1;デフォルトのWEPキーインデックス。範囲は0〜3です。
+//
+//						WifiEnterpriseConfig enterpriseConfig;		//APIレベル18;エンタープライズ構成の詳細では、EAPメソッド、証明書、およびEAPに関連付けられたその他の設定を指定します。
+//						String FQDN;								//APIレベル21;Passpoint構成の完全修飾ドメイン名
+//						String providerFriendlyName;				//APIレベル23;Passpoint資格プロバイダの名前
+//						long[] roamingConsortiumIds;				//APIレベル23;ローミングコンソーシアムIDリストのパスワード資格情報。Passpoint資格情報が有効と見なされるネットワークのセットを識別する
+//						boolean isHomeProviderNetwork;				//APIレベル26;このネットワークがホームPasspointプロバイダまたはローミングPasspointプロバイダによって提供されているかどうかを示すフラグ。このフラグはtrue、このネットワークがホームPasspointプロバイダfalseによって提供され、ローミングPasspointプロバイダによって提供されている場合、またはPasspoint以外のネットワークである場合に発生します。
+//						int priority;								//APIレベル1～26;廃止
+					mggStr += addGPSFeld(mggStr);
+
+					int ipAdr = info.getIpAddress();
+					String IpAddress = String.format("IP Adrress : %02d.%02d.%02d.%02d", (ipAdr >> 0) & 0xff, (ipAdr >> 8) & 0xff, (ipAdr >> 16) & 0xff, (ipAdr >> 24) & 0xff);
+					mggStr += "," + IpAddress + "\n";
+				}
+			}
+			Log.i(TAG, dbMsg);
+		} catch (NullPointerException e) {
+			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
+		}
+		return mggStr;
+	}
+
 
 	public void getNowConectInfo() {                //接続先情報
 		final String TAG = "getNowConect";
@@ -505,25 +706,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					if ( infoList == null ) {
 						infoList = new ArrayList< String >();
 					}
-//                if (-1 < latitudeVal) {         // 緯度の表示
-//                    infoList.add(latitudeStr);// 緯度
-//                }
-//                if (-1 < longitudeVal) {         //   = -1;       // 経度の表示
-//                    infoList.add(LongtudeStr);// 経度
-//                }
-//                if (-1 < altitudeVal) {         // = -1;                //標高
-//                    infoList.add(altitudeStr);// 標高
-//                }
-//                if (-1 < accuracyVal) {         //精度
-//                    infoList.add(accuracyStr);// 精度
-//                }
-//                if (0 < pinpointingTimeVal) {         // = 0;                //測位時刻
-//                    infoList.add(pinpointingTimeValStr);// 測位時刻
-//                }
 
-//                    String BssId = String.format("BSSID : %s", info.getBSSID());    //　SSIDを取得
-//                    infoList.add(BssId);
-//                    String SsId = String.format("SSID : %s", info.getSSID());    //　SSIDを取得
+
 //                    infoList.add(SsId);
 					int ipAdr = info.getIpAddress();
 					String IpAddress = String.format("IP Adrress : %02d.%02d.%02d.%02d", (ipAdr >> 0) & 0xff, (ipAdr >> 8) & 0xff, (ipAdr >> 16) & 0xff, (ipAdr >> 24) & 0xff);
@@ -1317,6 +1501,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	}
 
 	//GoogleDriveにデータ送信/////////////////////////////////////////////////////////////////////////////////////////////
+	////http://vividcode.hatenablog.com/entry/20130908/1378613811/  /////////////
 	/**
 	 * Google API Consoleでプロジェクト作成
 	 * プロジェクト名      ;   NUloger
@@ -1328,114 +1513,313 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	private static final String TAG = "DriveSample";
 	private static final int REQUEST_CODE_RESOLUTION = 1;
 	private GoogleApiClient googleApiClient = null;
+	private com.google.api.services.drive.Drive service = null;
+	private GoogleAccountCredential credential = null;
+	private String FILE_TITLE = "google_drive_test";                //static final
 
 	protected void sendAPData() {
-		googleApiClient = new GoogleApiClient.Builder(this).addApi(Drive.API).addScope(Drive.SCOPE_FILE).addScope(Drive.SCOPE_APPFOLDER)    // AppFolderの利用
-				                  .addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
-		googleApiClient.connect();//                    // 接続開始
+		final String TAG = "sendAPData";
+		String dbMsg = "service=" + service.about();
+		if ( service == null ) {                                                                                //orgは onStartで
+			credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
+			startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+		}
+		FILE_TITLE = ( String ) (timestanp_tv.getText() + "_" + timestanp_tv.getText());
+		saveTextToDrive();
+		myLog(TAG, dbMsg);
 	}
 
+	/////http://vividcode.hatenablog.com/entry/20130908/1378613811////////////////////////////////////////////////////////////////////////////////////////////
+	static final int REQUEST_ACCOUNT_PICKER = 1;
+	static final int REQUEST_AUTHORIZATION = 2;
+
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
+	protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
 		final String TAG = "onActivityResult";
-		String dbMsg = "requestCode="+requestCode+ ",resultCode="+resultCode;
-		if ( requestCode == REQUEST_CODE_RESOLUTION && resultCode == RESULT_OK ) {// アクセス承認を得たので再接続開始
-			dbMsg += ",isConnected=" + googleApiClient.isConnected();
-			googleApiClient.connect();
-			dbMsg += ">>" + googleApiClient.isConnected();
-		}
-		myLog(TAG,  dbMsg);
-	}
-
-	@Override
-	public void onConnected(@Nullable Bundle bundle) {      // 接続完了したのでDriveに新しいコンテンツを生成する
-		Drive.DriveApi.newDriveContents(googleApiClient).setResultCallback(driveContentsResultCallback);
-	}
-
-	@Override
-	public void onConnectionSuspended(int i) {
-	}
-
-	@Override
-	public void onConnectionFailed(@NonNull ConnectionResult result) {
-		final String TAG = "onConnectionFailed";
-		String dbMsg = "hasResolution="+result.hasResolution();
-		if ( !result.hasResolution() ) {  // show the localized error dialog.
-			GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
-			return;
-		}
+		String dbMsg = "requestCode=" + requestCode + ",resultCode=" + resultCode;
 		try {
-			// ユーザにGoogle Driveへのアクセス承認ダイアログを表示する
-			// onActivityResultに結果が通知されるので第二引数に指定したcodeで判別する
-			result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
-			myLog(TAG,  dbMsg);
-		} catch (IntentSender.SendIntentException er) {
+			switch ( requestCode ) {
+				case REQUEST_ACCOUNT_PICKER:
+					if ( resultCode == RESULT_OK && data != null && data.getExtras() != null ) {
+						String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+						if ( accountName != null ) {
+							credential.setSelectedAccountName(accountName);
+							service = getDriveService(credential);
+						}
+					}
+					break;
+				case REQUEST_AUTHORIZATION:
+					if ( resultCode == Activity.RESULT_OK ) {
+						saveTextToDrive();
+					} else {
+						startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+					}
+					break;
+			}
+		} catch (Exception er) {
 			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
 		}
+		myLog(TAG, dbMsg);
 	}
 
-	private final ResultCallback< DriveApi.DriveContentsResult > driveContentsResultCallback = new ResultCallback< DriveApi.DriveContentsResult >() {
-		@Override
-		public void onResult(@NonNull DriveApi.DriveContentsResult result) {
-			final String TAG = "ResultCallback";
-			String dbMsg = "開始";
-			try {
-				if ( !result.getStatus().isSuccess() ) {
-					// Failed to create new content
-					return;
+	private void saveTextToDrive() {
+		final String TAG = "saveTextToDrive";
+		String dbMsg = "開始";
+		try {
+			final String inputText = makeSendList();                //((EditText)findViewById(R.id.editText)).getText().toString();
+			Thread t = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						// 指定のタイトルのファイルの ID を取得
+						String fileIdOrNull = null;
+						FileList list = service.files().list().execute();
+						for ( File f : list.getItems() ) {
+							if ( FILE_TITLE.equals(f.getTitle()) ) {
+								fileIdOrNull = f.getId();
+							}
+						}
+
+						File body = new File();
+						body.setTitle(FILE_TITLE);//fileContent.getName());
+						body.setMimeType("text/plain");
+
+						ByteArrayContent content = new ByteArrayContent("text/plain", inputText.getBytes(Charset.forName("UTF-8")));
+						if ( fileIdOrNull == null ) {
+							service.files().insert(body, content).execute();
+							showToast("insert!");
+						} else {
+							service.files().update(fileIdOrNull, body, content).execute();
+							showToast("update!");
+						}
+						// TODO 失敗時の処理?
+					} catch (UserRecoverableAuthIOException e) {
+						startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+					} catch (IOException e) {
+						showToast("error occur...");
+						e.printStackTrace();
+					}
 				}
+			});
+			t.start();
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		myLog(TAG, dbMsg);
+	}
 
-				final DriveContents driveContents = result.getDriveContents();
-
-				OutputStream outputStream = driveContents.getOutputStream();
-				Writer writer = new OutputStreamWriter(outputStream);
-
+	private void loadTextFromDrive() {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				final String TAG = "loadTextFromDrive";
+				String dbMsg = "開始";
 				try {
-					// 適当なJSONデータを書き込む
-					JSONObject jsonObject = new JSONObject();
-					jsonObject.put("key1", true).put("key2", 100.0).put("key3", 123);
-					writer.write(jsonObject.toString());
-					writer.close();
-				} catch (JSONException | IOException e) {
+					// 指定のタイトルのファイルの ID を取得
+					String fileIdOrNull = null;
+					FileList list = service.files().list().execute();
+					for ( File f : list.getItems() ) {
+						if ( FILE_TITLE.equals(f.getTitle()) ) {
+							fileIdOrNull = f.getId();
+						}
+					}
 
+					InputStream is = null;
+					if ( fileIdOrNull != null ) {
+						File f = service.files().get(fileIdOrNull).execute();
+						is = downloadFile(service, f);
+					}
+					BufferedReader br = new BufferedReader(new InputStreamReader(is));
+					try {
+						StringBuffer sb = new StringBuffer();
+						sb.append(br.readLine());
+
+						final String text = sb.toString();
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								//					((EditText)findViewById(R.id.editText)).setText(text);
+							}
+						});
+					} finally {
+						if ( br != null ) br.close();
+					}
+					myLog(TAG, dbMsg);
+					// TODO 失敗時の処理?
+				} catch (UserRecoverableAuthIOException e) {
+					startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+				} catch (IOException e) {
+					showToast("error occur...");
+					e.printStackTrace();
 				}
-
-				// "sample.json"というファイル名でファイル保存する
-				MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle("sample.json").setMimeType("text/plain").build();
-
-				Drive.DriveApi.getAppFolder(googleApiClient).createFile(googleApiClient, changeSet, driveContents).setResultCallback(( ResultCallback< ? super DriveFolder.DriveFileResult > ) fileCallback);
-				myLog(TAG,  dbMsg);
-			} catch (Exception er) {
-				Log.e(TAG, dbMsg + ";でエラー発生；" + er);
 			}
-		}
+		});
+		t.start();
+	}
 
-	};
-
-	private final ResultCallback< DriveFolder.DriveFileResult > fileCallback = new ResultCallback< DriveFolder.DriveFileResult >() {
-		@Override
-		public void onResult(@NonNull DriveFolder.DriveFileResult result) {
-			final String TAG = "ResultCallback";
-			String dbMsg = "isSuccess=" + result.getStatus().isSuccess();
-			if ( !result.getStatus().isSuccess() ) {
-				// Failed to create a file
-				return;
+	// https://developers.google.com/drive/v2/reference/files/get より
+	private static InputStream downloadFile(com.google.api.services.drive.Drive service, File file) {
+		final String TAG = "downloadFile";
+		String dbMsg = "開始";
+		if ( file.getDownloadUrl() != null && file.getDownloadUrl().length() > 0 ) {
+			try {
+				HttpResponse resp = service.getRequestFactory().buildGetRequest(new GenericUrl(file.getDownloadUrl())).execute();
+				return resp.getContent();
+			} catch (IOException e) {
+				// An error occurred.
+				e.printStackTrace();
+				return null;
 			}
-			DriveId driveId = result.getDriveFile().getDriveId();
-			// ファイルの作成に成功するとDriveIdが発行される
-			// このDriveIdを保存しておくと、次回以降DriveIdを使ってファイル検索できる
-			dbMsg += ",driveId==" + driveId;
-			String mesStr = "送信ファイルId=" +driveId;
-			Toast toast = Toast.makeText(MainActivity.this, mesStr, Toast.LENGTH_LONG);
-			toast.show();
-			googleApiClient.disconnect();                  // 接続解除
-			dbMsg += ",isConnected=" + googleApiClient.isConnected();
-
-			myLog(TAG,  dbMsg);
-
+		} else {
+			// The file doesn't have any content stored on Drive.
+			return null;
 		}
-	};
+	}
+
+	private com.google.api.services.drive.Drive getDriveService(GoogleAccountCredential credential) {
+		return new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
+	}
+
+	public void showToast(final String toast) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				final String TAG = "showToast";
+				String dbMsg = "開始";
+				try {
+					Toast.makeText(getApplicationContext(), toast, Toast.LENGTH_SHORT).show();
+				} catch (Exception er) {
+					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+				}
+				myLog(TAG, dbMsg);
+			}
+		});
+	}
+
+//
+//	@Override
+//	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//		super.onActivityResult(requestCode, resultCode, data);
+//		final String TAG = "onActivityResult";
+//		String dbMsg = "requestCode=" + requestCode + ",resultCode=" + resultCode;
+//		try {
+//			if ( requestCode == REQUEST_CODE_RESOLUTION && resultCode == RESULT_OK ) {// アクセス承認を得たので再接続開始
+//				dbMsg += ",isConnected=" + googleApiClient.isConnected();
+//				googleApiClient.connect();
+//				dbMsg += ">>" + googleApiClient.isConnected();
+//			}
+//		} catch (Exception er) {
+//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//		}
+//		myLog(TAG, dbMsg);
+//	}
+//
+//	@Override
+//	public void onConnected(@Nullable Bundle bundle) {      // 接続完了したのでDriveに新しいコンテンツを生成する
+//		final String TAG = "onConnected";
+//		String dbMsg = "→driveContentsResult" ;
+//		try {
+//			myLog(TAG, dbMsg);
+//			Drive.DriveApi.newDriveContents(googleApiClient).setResultCallback(driveContentsResultCallback);
+//		} catch (Exception er) {
+//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//		}
+//	}
+//
+//	@Override
+//	public void onConnectionSuspended(int i) {
+//		final String TAG = "onConnectionSuspended";
+//		String dbMsg = "i=" + i;
+//		try {
+//			myLog(TAG, dbMsg);
+//		} catch (Exception er) {
+//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//		}
+//	}
+//
+//	@Override
+//	public void onConnectionFailed(@NonNull ConnectionResult result) {
+//		final String TAG = "onConnectionFailed";
+//		String dbMsg = "hasResolution=" + result.hasResolution();
+//		try {
+//			if ( !result.hasResolution() ) {  // show the localized error dialog.
+//				GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
+//				return;
+//			}
+//			// ユーザにGoogle Driveへのアクセス承認ダイアログを表示する
+//			// onActivityResultに結果が通知されるので第二引数に指定したcodeで判別する
+//			result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
+//			myLog(TAG, dbMsg);
+//		} catch (IntentSender.SendIntentException er) {
+//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//		}
+//	}
+//
+//	private final ResultCallback< DriveApi.DriveContentsResult > driveContentsResultCallback = new ResultCallback< DriveApi.DriveContentsResult >() {
+//		@Override
+//		public void onResult(@NonNull DriveApi.DriveContentsResult result) {
+//			final String TAG = "driveContentsResult";
+//			String dbMsg = "isSuccess="+result.getStatus().isSuccess();
+//			try {
+//				if ( !result.getStatus().isSuccess() ) {
+//					// Failed to create new content
+//					return;
+//				}
+//
+//				final DriveContents driveContents = result.getDriveContents();
+//
+//				OutputStream outputStream = driveContents.getOutputStream();
+//				Writer writer = new OutputStreamWriter(outputStream);
+//
+//				try {
+//					// 適当なJSONデータを書き込む
+//					JSONObject jsonObject = new JSONObject();
+//					jsonObject.put("key1", true).put("key2", 100.0).put("key3", 123);
+//					writer.write(jsonObject.toString());
+//					dbMsg += ",writer="+jsonObject.length() + "件";
+//					writer.close();
+//				} catch (JSONException | IOException er) {
+//					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//				}
+//
+//				// "sample.json"というファイル名でファイル保存する
+//				MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle("sample.json").setMimeType("text/plain").build();
+//				dbMsg += ",changeSet="+changeSet;
+//		//		dbMsg += ",driveContents="+driveContents.getOutputStream().toString();
+//				Drive.DriveApi.getAppFolder(googleApiClient).createFile(googleApiClient, changeSet, driveContents).setResultCallback(( ResultCallback< ? super DriveFolder.DriveFileResult > ) fileCallback);
+//				myLog(TAG, dbMsg);
+//			} catch (Exception er) {
+//				Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//			}
+//		}
+//
+//	};
+//
+//	private final ResultCallback< DriveFolder.DriveFileResult > fileCallback = new ResultCallback< DriveFolder.DriveFileResult >() {
+//		@Override
+//		public void onResult(@NonNull DriveFolder.DriveFileResult result) {
+//			final String TAG = "fileCallback";
+//			String dbMsg = "isSuccess=" + result.getStatus().isSuccess();
+//			try {
+//				if ( !result.getStatus().isSuccess() ) {
+//					// Failed to create a file
+//					return;
+//				}
+//				DriveId driveId = result.getDriveFile().getDriveId();
+//				// ファイルの作成に成功するとDriveIdが発行される
+//				// このDriveIdを保存しておくと、次回以降DriveIdを使ってファイル検索できる
+//				dbMsg += ",driveId==" + driveId;
+//				String mesStr = "送信ファイルId=" + driveId;
+//				Toast toast = Toast.makeText(MainActivity.this, mesStr, Toast.LENGTH_LONG);
+//				toast.show();
+//				googleApiClient.disconnect();                  // 接続解除
+//				dbMsg += ",isConnected=" + googleApiClient.isConnected();
+//				myLog(TAG, dbMsg);
+//			} catch (Exception er) {
+//				Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//			}
+//		}
+//	};
 
 
 
@@ -1467,11 +1851,12 @@ https://github.com/xamarin/google-apis
 https://codexample.org/questions/168187/xamarin-forms-upload-to-google-drive.c
 
 https://github.com/google/google-api-dotnet-client-samples/blob/master/Drive.Sample/Program.cs
-
+  https://qiita.com/linquanstudio/items/23fca582ba6ae0d6d328
+  
 ※下記はXamarinではなくAndroidStudioを使ってjavaで実装する例
 　https://qiita.com/hituziando/items/dfbc64ed104e3cf2e431
 　https://www.isus.jp/smartphones/connecting-to-google-drive-from-an-android-app/
-
+　http://vividcode.hatenablog.com/entry/20130908/1378613811
 
 ③プラットフォーム依存処理(DependencyService利用)
 基本的に共通部分のXamarin.Fromsで画面表示を行い、各プラットフォーム依存部分はインタフェースを定義して、AndroidやiOSで処理を分ける形になります。
@@ -1491,27 +1876,30 @@ OAuth 2.0 クライアント ID 	;	NUAndroid1
 keytool -exportcert -keystore path-to-debug-or-production-keystore -list -v
  API key	2017/12/26	なし	AIzaSyAcW0we2TB_omDTlk-3qTGdtJ85TYXF2JM
 
+ACriant01         com.example.hkuwayama.nuloger     3E:19:82:D8:6A:F4:98:11:DC:3C:83:80:D0:53:9E:F2:00:A1:A3:70
+hkuwayama@coresoft-net.co.jp        com.example.hkuwayama.nuloger
+
     * */
 
 	protected void actionDisconnect() {
 		final String TAG = "actionDisconnect";
-		String dbMsg =  ",isConnected=" + googleApiClient.isConnected();
+		String dbMsg = ",isConnected=" + googleApiClient.isConnected();
 		googleApiClient.disconnect();                  // 接続解除
 		dbMsg += ">>" + googleApiClient.isConnected();
-		myLog(TAG,  dbMsg);
+		myLog(TAG, dbMsg);
 	}
 
 
 	public void messageShow(String titolStr, String mggStr) {
-		new AlertDialog.Builder(MainActivity.this).setTitle(titolStr)
-				.setMessage(mggStr)
-				.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {}
-				}).create().show();
+		new AlertDialog.Builder(MainActivity.this).setTitle(titolStr).setMessage(mggStr).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		}).create().show();
 	}
 
-	public boolean debugNow =true;
+	public boolean debugNow = true;
+
 	public void myLog(String TAG, String dbMsg) {
 		try {
 			if ( debugNow ) {
@@ -1522,4 +1910,18 @@ keytool -exportcert -keystore path-to-debug-or-production-keystore -list -v
 		}
 	}
 
+	@Override
+	public void onConnected(@Nullable Bundle bundle) {
+
+	}
+
+	@Override
+	public void onConnectionSuspended(int i) {
+
+	}
+
+	@Override
+	public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+	}
 }
