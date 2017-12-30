@@ -546,17 +546,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	}
 
 	public String makeSendList() {
-		final String TAG = "apListUp";
+		final String TAG = "makeSendList";
 		String dbMsg = null;
-		String retStr = "取得できてません";
+		String retStr = "";
 		try {
 			final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			final Date date = new Date(System.currentTimeMillis());
-			String headLine = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" + 					//APIL1
-					                  ",timestamp" + ",intcenterFreq0" +  ",centerFreq1" + ",channelWidth" + ",operatorFriendlyName" + ",venueName" +		//APIL17,23
-					                  ",latitude" + ",longitude" + ",altitude" + ",accuracy"  + ",pinpointing Time" + ",(IP Address)\n";   					//GPS
-			retStr = headLine + ( String ) student_id_tv.getText() + "," + df.format(date);
-			retStr += getNowConectBody();
 
 			wfManager = ( WifiManager ) MainActivity.this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);        //(android.content.Context.WIFI_SERVICE);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {                                                                         //APIL23以上
@@ -565,6 +560,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 //            }
 			if ( wfManager != null ) {
 				if ( wfManager.isWifiEnabled() == true ) {// if (wfManager.getWifiState() == wfManager.WIFI_STATE_ENABLED) {
+					WifiInfo info = wfManager.getConnectionInfo();
+					String conectedBSSID = info.getBSSID();        //String BSSID;APIL1;設定されている場合、このネットワーク構成エントリは、指定されたBSSIDを持つAPに関連付けるときにのみ使用する必要があります。値は、イーサネットMACアドレ
+					String conectedSsID = info.getSSID();
 					apList = null;//new List<ScanResult>() ;
 					wfManager.startScan();                         // APをスキャン
 					apList = wfManager.getScanResults();        // スキャン結果を取得
@@ -573,38 +571,45 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					;  //リストアップ件数
 
 					dbMsg = tSize + "件";
-			//		aps = new String[apList.size()];
-					int setuzokuCount = 0;
+					retStr = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" +                    //APIL1
+							         ",timestamp" + ",intcenterFreq0" + ",centerFreq1" + ",channelWidth" + ",operatorFriendlyName" + ",venueName" +        //APIL17,23
+							         ",latitude" + ",longitude" + ",altitude" + ",accuracy" + ",pinpointing Time" + ",isConected" + "\n";                    //GPS
 					for ( int i = 0 ; i < apList.size() ; i++ ) {
-						dbMsg = i + "/" + apList.size() + ")";
-						retStr +=  ( String ) student_id_tv.getText() + "," + df.format(date);
+						dbMsg += "\n(" + i + "/" + apList.size() + ")";
+						String OneRecord = ( String ) student_id_tv.getText() + "," + df.format(date);
 //ScanResultのフィールド	https://developer.android.com/reference/android/net/wifi/ScanResult.html////
-						retStr += ","+ apList.get(i).SSID; 									//String SSID;APIレベル1;ネットワーク名
-						retStr += ","+  apList.get(i).BSSID;									//String BSSID;APIレベル1;アクセスポイントのアドレス。
-//						if ( !apList.get(i).SSID.equals("") ) {                    //SSIDが拾えないものは空白文字が入る
-//							setuzokuCount++;
-//						} else {
-//						}
-						retStr += ","+  apList.get(i).frequency;			//int ;APIレベル1;クライアントがアクセスポイントと通信しているチャネルの主要な20 MHz周波数（MHz単位）。
-						retStr += ","+  apList.get(i).level;	//int ;//APIL1;検出された信号レベル（dBm）。RSSIとも呼ばれます。calculateSignalLevel(int, int)この数値をユーザーに表示できる絶対信号レベルに変換するために使用します。
-						retStr += ","+  apList.get(i).capabilities;			//String ;APIレベル1;アクセスポイントでサポートされている認証、キー管理、および暗号化方式について説明します。
-						retStr += ","+  apList.get(i).timestamp;			//long ;APIレベル17;この結果が最後に確認されたときのタイムスタンプ（ブート以降）。
-						if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
-							retStr += ","+  apList.get(i).centerFreq0;			//int ;APIレベル23:APの帯域幅が20 MHzの場合は使用されませんAPが40,80または160 MHzを使用する場合、APが80 + 80 MHzを使用する場合の中心周波数（MHz）です。これは最初のセグメントの中心周波数）
-							retStr += ","+  apList.get(i).centerFreq1;			//int ;APIレベル23;APの帯域幅が80 + 80 MHzの場合にのみ使用されます.APが80 + 80 MHzを使用する場合、これは2番目のセグメントの中心周波数（MHz単位）です。
-							retStr += ","+  apList.get(i).channelWidth;			//int ;//APIレベル23;APチャネル帯域幅。
-//														//0;CHANNEL_WIDTH_20MHZ、1;CHANNEL_WIDTH_40MHZ、 2;CHANNEL_WIDTH_80MHZ、3;CHANNEL_WIDTH_160MHZ,4;CHANNEL_WIDTH_80MHZ_PLUS_MHZ。
-							retStr += ","+  apList.get(i).operatorFriendlyName;			//	CharSequence ;	//APIレベル23;アクセスポイントが発行したパスポイントオペレータ名を示します。
-							retStr += ","+  apList.get(i).venueName;			//	CharSequence ;APIレベル23;アクセスポイントから発行された会場名を示します。Passpointネットワークでのみ使用可能で、アクセスポイントで公開されている場合にのみ使用できます。
-						}
-						retStr += addGPSFeld(retStr);
-						dbMsg = dbMsg + retStr;
-									Log.i(TAG, dbMsg);
-					}            //for(int i=0; i<apList.size(); i++) {
+						String sSID = apList.get(i).SSID;
+						OneRecord += "," + sSID;                                    //String SSID;APIL1;ネットワーク名
+						dbMsg += ",SSID=" + sSID + " ; " + conectedSsID;
+						String bSSID = apList.get(i).BSSID;                                    //String BSSID;APIL1;アクセスポイントのアドレス。
+						OneRecord += "," + bSSID;                                    //String BSSID;APIL1;アクセスポイントのアドレス。
+						dbMsg += ",BSSID=" + bSSID + " ; " + conectedBSSID;
 
+						OneRecord += "," + apList.get(i).frequency;            //int ;APIL1;クライアントがアクセスポイントと通信しているチャネルの主要な20 MHz周波数（MHz単位）。
+						OneRecord += "," + apList.get(i).level;    //int ;//APIL1;検出された信号レベル（dBm）。RSSIとも呼ばれます。calculateSignalLevel(int, int)この数値をユーザーに表示できる絶対信号レベルに変換するために使用します。
+						OneRecord += "," + apList.get(i).capabilities;            //String ;APIL1;アクセスポイントでサポートされている認証、キー管理、および暗号化方式について説明します。
+						long timeStamp = apList.get(i).timestamp;
+						OneRecord += "," + df.format(timeStamp);            //long ;APIL17;この結果が最後に確認されたときのタイムスタンプ（ブート以降）。
+						if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
+							OneRecord += "," + apList.get(i).centerFreq0;            //int ;APIL23:APの帯域幅が20 MHzの場合は使用されませんAPが40,80または160 MHzを使用する場合、APが80 + 80 MHzを使用する場合の中心周波数（MHz）です。これは最初のセグメントの中心周波数）
+							OneRecord += "," + apList.get(i).centerFreq1;            //int ;APIL23;APの帯域幅が80 + 80 MHzの場合にのみ使用されます.APが80 + 80 MHzを使用する場合、これは2番目のセグメントの中心周波数（MHz単位）です。
+							OneRecord += "," + apList.get(i).channelWidth;            //int ;//APIL23;APチャネル帯域幅。
+//														//0;CHANNEL_WIDTH_20MHZ、1;CHANNEL_WIDTH_40MHZ、 2;CHANNEL_WIDTH_80MHZ、3;CHANNEL_WIDTH_160MHZ,4;CHANNEL_WIDTH_80MHZ_PLUS_MHZ。
+							OneRecord += "," + apList.get(i).operatorFriendlyName;            //	CharSequence ;	//APIL23;アクセスポイントが発行したパスポイントオペレータ名を示します。
+							OneRecord += "," + apList.get(i).venueName;            //	CharSequence ;APIL23;アクセスポイントから発行された会場名を示します。Passpointネットワークでのみ使用可能で、アクセスポイントで公開されている場合にのみ使用できます。
+						}
+						OneRecord += addGPSFeld();
+						if ( bSSID.equals(conectedBSSID) ) {
+							OneRecord += "," + "true".toString() + "\n";
+						} else {
+							OneRecord += "," + "false".toString() + "\n";
+						}
+						dbMsg += ",OneRecord=" + OneRecord;
+						retStr += OneRecord;
+					}            //for(int i=0; i<apList.size(); i++) {
 				}
 			}
-
+//			dbMsg += ",retStr="+ retStr;
 			Log.i(TAG, dbMsg);
 		} catch (NullPointerException e) {
 			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
@@ -612,81 +617,43 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		return retStr;
 	}
 
-	public String addGPSFeld(String retStr) {
+	public String addGPSFeld() {
 		final String TAG = "addGPSFeld";
 		String dbMsg = null;
+		String retStr = "";
 		if ( -1 < latitudeVal ) {         // 緯度の表示
-			retStr += "" +latitudeVal;
-		//	infoList.add(latitudeStr);// 緯度
+			retStr += "," + latitudeVal;
+			//	infoList.add(latitudeStr);// 緯度
+		} else {
+			retStr += ",";
 		}
 		if ( -1 < longitudeVal ) {         //   = -1;       // 経度の表示
-			retStr += "" +longitudeVal;
+			retStr += "," + longitudeVal;
 //			infoList.add(LongtudeStr);// 経度
+		} else {
+			retStr += ",";
 		}
 		if ( -1 < altitudeVal ) {         // = -1;                //標高
-			retStr += "" +altitudeVal;
-	//		infoList.add(altitudeStr);// 標高
+			retStr += "," + altitudeVal;
+			//		infoList.add(altitudeStr);// 標高
+		} else {
+			retStr += ",";
 		}
 		if ( -1 < accuracyVal ) {         //精度
-			retStr += "" +accuracyVal;
-			infoList.add(accuracyStr);// 精度
+			retStr += "," + accuracyVal;
+			//		infoList.add(accuracyStr);// 精度
+		} else {
+			retStr += ",";
 		}
 		if ( 0 < pinpointingTimeVal ) {         // = 0;                //測位時刻
-			retStr += "" +pinpointingTimeVal;
-			infoList.add(pinpointingTimeValStr);// 測位時刻
+			final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			retStr += "," + df.format(pinpointingTimeVal);
+			//		infoList.add(pinpointingTimeValStr);// 測位時刻
+		} else {
+			retStr += ",";
 		}
 
 		return retStr;
-	}
-
-	///接続先情報を ,　区切りの１行で返す
-	public String getNowConectBody() {                //
-		final String TAG = "getNowConectBody";
-		String dbMsg = null;
-		String mggStr = "表示できる情報はありません。" + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + ",";
-		mggStr += ( String ) latitude_tv.getText() + "," + latitude_tv.getText() + "\n";
-
-		try {
-			if ( wfManager != null ) {
-				if ( wfManager.isWifiEnabled() == true ) {// if (wfManager.getWifiState() == wfManager.WIFI_STATE_ENABLED) {
-					WifiInfo info = wfManager.getConnectionInfo();
-
-					//						//WifiConfigurationのフィールド		https://developer.android.com/reference/android/net/wifi/WifiConfiguration.html
-					mggStr = info.getSSID();            //APIレベル1;ネットワークのSSID。二重引用符（たとえば"MyNetwork"）で囲まれたASCII文字列、または引用符で囲まれていない16進数の文字列（たとえば、）のいずれかにすることができます01a243f405。            String.format("SSID : %s", info.getSSID());    //　SSIDを取得
-					mggStr += info.getBSSID();        //String BSSID;APIレベル1;設定されている場合、このネットワーク構成エントリは、指定されたBSSIDを持つAPに関連付けるときにのみ使用する必要があります。値は、イーサネットMACアドレスの形式の文字列です（例： XX:XX:XX:XX:XX:XX各X16進数）。
-					mggStr += "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + "," + ",";
-
-//						BitSet allowedAuthAlgorithms		//APIレベル1;この構成でサポートされている一連の認証プロトコル。WifiConfiguration.AuthAlgorithm値の説明を参照してください。デフォルトは自動選択です。
-//						BitSet allowedGroupCiphers			//APIレベル1;この設定でサポートされているグループ暗号のセット。WifiConfiguration.GroupCipher値の説明を参照してください。デフォルトはCCMP TKIP WEP104 WEP40です。
-//						BitSet allowedKeyManagement			//APIレベル1;この構成でサポートされる鍵管理プロトコルのセット。WifiConfiguration.KeyMgmt値の説明を参照してください。デフォルトはWPA-PSK WPA-EAPです。
-//						BitSet allowedPairwiseCiphers		//APIレベル1;この構成でサポートされているWPAのペアワイズ暗号のセット。WifiConfiguration.PairwiseCipher値の説明を参照してください。デフォルトはCCMP TKIPです。
-//						BitSet allowedProtocols				//APIレベル1;この設定でサポートされているセキュリティプロトコルのセット。WifiConfiguration.Protocol値の説明を参照してください。デフォルトはWPA RSNです。
-//						boolean hiddenSSID;					//APIレベル1;これはSSIDをブロードキャストしないネットワークなので、スキャンにSSID固有のプローブ要求を使用する必要があります。
-//						int networkId;						//APIレベル1;サプリカントがこのネットワーク構成エントリを識別するために使用するID番号。これは、ほとんどの呼び出しをサプリカントに引き渡すために引数として渡されなければなりません。
-//						String preSharedKey;						//APIレベル1;WPA-PSKで使用する事前共有キー。二重引用符で囲まれたASCII文字列（たとえば、"abcdefghij"PSKパスフレーズまたはraw PSKの64桁の16進数の文字列）。
-//						int status;									//APIレベル;このネットワーク構成エントリの現在のステータス。
-//						String[] wepKeys;							//APIレベル1;最大4つのWEPキー。二重引用符で囲まれたASCII文字列（たとえば、"abcdef"）または16進数の文字列（たとえば、0102030405）。
-//				                                                        		//これらのキーの1つの値が読み取られると、実際のキーは返されず、キーに値がある場合は「*」、それ以外の場合はnull文字列が返されます。
-//						int wepTxKeyIndex;							//APIレベル1;デフォルトのWEPキーインデックス。範囲は0〜3です。
-//
-//						WifiEnterpriseConfig enterpriseConfig;		//APIレベル18;エンタープライズ構成の詳細では、EAPメソッド、証明書、およびEAPに関連付けられたその他の設定を指定します。
-//						String FQDN;								//APIレベル21;Passpoint構成の完全修飾ドメイン名
-//						String providerFriendlyName;				//APIレベル23;Passpoint資格プロバイダの名前
-//						long[] roamingConsortiumIds;				//APIレベル23;ローミングコンソーシアムIDリストのパスワード資格情報。Passpoint資格情報が有効と見なされるネットワークのセットを識別する
-//						boolean isHomeProviderNetwork;				//APIレベル26;このネットワークがホームPasspointプロバイダまたはローミングPasspointプロバイダによって提供されているかどうかを示すフラグ。このフラグはtrue、このネットワークがホームPasspointプロバイダfalseによって提供され、ローミングPasspointプロバイダによって提供されている場合、またはPasspoint以外のネットワークである場合に発生します。
-//						int priority;								//APIレベル1～26;廃止
-					mggStr += addGPSFeld(mggStr);
-
-					int ipAdr = info.getIpAddress();
-					String IpAddress = String.format("IP Adrress : %02d.%02d.%02d.%02d", (ipAdr >> 0) & 0xff, (ipAdr >> 8) & 0xff, (ipAdr >> 16) & 0xff, (ipAdr >> 24) & 0xff);
-					mggStr += "," + IpAddress + "\n";
-				}
-			}
-			Log.i(TAG, dbMsg);
-		} catch (NullPointerException e) {
-			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
-		}
-		return mggStr;
 	}
 
 
@@ -1516,20 +1483,39 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	private com.google.api.services.drive.Drive service = null;
 	private GoogleAccountCredential credential = null;
 	private String FILE_TITLE = "google_drive_test";                //static final
+	private String accountName = "";
 
 	protected void sendAPData() {
 		final String TAG = "sendAPData";
-		String dbMsg = "service=" + service.about();
+		String dbMsg = "";//"service=" + service.about();
 		if ( service == null ) {                                                                                //orgは onStartで
-			credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
-			startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+			if ( accountName.equals("") ) {
+				credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
+				startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+			} else {
+
+			}
+
 		}
-		FILE_TITLE = ( String ) (timestanp_tv.getText() + "_" + timestanp_tv.getText());
-		saveTextToDrive();
+		FILE_TITLE = ( String ) (student_id_tv.getText() + "_" + timestanp_tv.getText()) + ".csv";
 		myLog(TAG, dbMsg);
 	}
 
 	/////http://vividcode.hatenablog.com/entry/20130908/1378613811////////////////////////////////////////////////////////////////////////////////////////////
+	protected void conectSaveStart() {
+		final String TAG = "conectSaveStart";
+		String dbMsg = "accountName=" + accountName;
+		try {
+			credential.setSelectedAccountName(accountName);
+			service = getDriveService(credential);
+			saveTextToDrive();
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		myLog(TAG, dbMsg);
+	}
+
+
 	static final int REQUEST_ACCOUNT_PICKER = 1;
 	static final int REQUEST_AUTHORIZATION = 2;
 
@@ -1540,11 +1526,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		try {
 			switch ( requestCode ) {
 				case REQUEST_ACCOUNT_PICKER:
-					if ( resultCode == RESULT_OK && data != null && data.getExtras() != null ) {
-						String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-						if ( accountName != null ) {
-							credential.setSelectedAccountName(accountName);
-							service = getDriveService(credential);
+					if ( accountName != null ) {
+						if ( resultCode == RESULT_OK && data != null && data.getExtras() != null ) {
+							accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+							conectSaveStart();
 						}
 					}
 					break;
@@ -1567,37 +1552,44 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		String dbMsg = "開始";
 		try {
 			final String inputText = makeSendList();                //((EditText)findViewById(R.id.editText)).getText().toString();
+			dbMsg = "inputText=" + inputText;
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
+					final String TAG = "saveTextToDrive_Thread";
+					String dbMsg = "FILE_TITLE="+FILE_TITLE;
 					try {
-						// 指定のタイトルのファイルの ID を取得
-						String fileIdOrNull = null;
-						FileList list = service.files().list().execute();
-						for ( File f : list.getItems() ) {
-							if ( FILE_TITLE.equals(f.getTitle()) ) {
-								fileIdOrNull = f.getId();
-							}
-						}
 
 						File body = new File();
 						body.setTitle(FILE_TITLE);//fileContent.getName());
 						body.setMimeType("text/plain");
-
 						ByteArrayContent content = new ByteArrayContent("text/plain", inputText.getBytes(Charset.forName("UTF-8")));
-						if ( fileIdOrNull == null ) {
+
+//						// 指定のタイトルのファイルの ID を取得
+//						String fileIdOrNull = null;
+//						FileList list = service.files().list().execute();
+//						for ( File f : list.getItems() ) {
+//							if ( FILE_TITLE.equals(f.getTitle()) ) {
+//								fileIdOrNull = f.getId();
+//							}
+//						}
+//						if ( fileIdOrNull == null ) {
 							service.files().insert(body, content).execute();
-							showToast("insert!");
-						} else {
-							service.files().update(fileIdOrNull, body, content).execute();
-							showToast("update!");
-						}
+//				//			showToast("insert!");
+//							dbMsg += ">>insert" ;
+//						} else {
+//							service.files().update(fileIdOrNull, body, content).execute();
+//				//			showToast("update!");
+//							dbMsg += ">>update" ;
+//						}
 						// TODO 失敗時の処理?
-					} catch (UserRecoverableAuthIOException e) {
-						startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
-					} catch (IOException e) {
-						showToast("error occur...");
-						e.printStackTrace();
+					} catch (UserRecoverableAuthIOException er) {
+						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+						startActivityForResult(er.getIntent(), REQUEST_AUTHORIZATION);
+					} catch (IOException er) {
+						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+				//		showToast("error occur...");
+			//			e.printStackTrace();
 					}
 				}
 			});
