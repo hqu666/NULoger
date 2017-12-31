@@ -19,6 +19,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -80,6 +81,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
@@ -110,6 +113,7 @@ import static android.os.SystemClock.uptimeMillis;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 	public final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 	public Date date;
+	public int WaitingScond = 5;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -177,6 +181,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
 	public void callQuit() {
+		if(null != timer){
+			timer.cancel();     							// タイマーをキャンセル
+			timer = null;
+		}
 		if ( googleApiClient != null ) {
 			googleApiClient.disconnect();                  // 接続解除
 		}
@@ -451,20 +459,59 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		altitude_tv = ( TextView ) findViewById(R.id.altitude_tv);       //標高
 		list_up_count_tv = ( TextView ) findViewById(R.id.list_up_count_tv);       //リストアップ件数
 
+		step_spinner = ( Spinner ) findViewById(R.id.step_spinner);       //測定間隔
+		step_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			public void onItemSelected(AdapterView< ? > parent, View viw, int position, long id) {                    //　アイテムが選択された時
+				final String TAG = "step_spinner";
+				String dbMsg = "position=" + position + ",id=" + id;
+				try {
+					String[] ids = getResources().getStringArray(R.array.step_list);
+					WaitingScond = Integer.parseInt(ids[position]);
+					dbMsg += ",WaitingScond=" + WaitingScond;
+				} catch (Exception er) {
+					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+				}
+				myLog(TAG, dbMsg);
+			}
+
+			public void onNothingSelected(AdapterView< ? > parent) {                //　アイテムが選択されなかった
+			}
+		});
 		record_start_sw = ( Switch ) findViewById(R.id.record_start_sw);   //開始ボタン
 		record_start_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			//     @Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				getGPSDatas();
+				final String TAG = "record_start_sw";
+				String dbMsg = "isChecked=" + isChecked;
+				try {
+					if(isChecked){
+						getGPSDatas();
+						if ( null != timer ) {                        // 稼働中の場合は止める
+							timer.cancel();
+							timer = null;
+						}
+						timer = new Timer();                // タイマーインスタンスを作成
+						timerTask = new MyTimerTask();                // タイマータスクインスタンスを作成
+						dbMsg += ",WaitingScond=" + WaitingScond;
+						timer.schedule(timerTask, 0, WaitingScond * 1000);                // タイマースケジュールを設定
+					} else{
+						if(null != timer){
+							timer.cancel();     							// タイマーをキャンセル
+							timer = null;
+						}
+					}
+				} catch (Exception er) {
+					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+				}
+				myLog(TAG, dbMsg);
 			}
 		});
 
 
-		step_spinner = ( Spinner ) findViewById(R.id.step_spinner);       //測定間隔
-
 		getGPSDatas();
 //        getWiFiDatas();
-
+//接続先の無線LANスポットを変える方法        http://web-terminal.blogspot.jp/2013/12/wifilan.html
+		///WifiConfigController
 	}
 
 	//ap情報取得///////////////////////////////////////////////////////////////////////////////////
@@ -474,8 +521,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	public List< ScanResult > apList;        // (imamnoWiFi実行後)スキャン結果を取得
 
 	///参照　①　http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
-	///Wifiの電波強度によって、接続先の無線LANスポットを変える方法        http://web-terminal.blogspot.jp/2013/12/wifilan.html
-	///WifiConfigController                    https://kokufu.blogspot.jp/2016/11/android-wi-fi-scanresult.html
+	///Wifiの電波強度によって                   https://kokufu.blogspot.jp/2016/11/android-wi-fi-scanresult.html
 	///Wi-Fi Aware(APIL26)                                   https://developer.android.com/guide/topics/connectivity/wifi-aware.html?hl=ja
 	public void apListUp() {                //圏内にあるSSIDをリストアップ		http://seesaawiki.jp/w/moonlight_aska/d/WiFi%A4%CEAP%A4%F2%A5%B9%A5%AD%A5%E3%A5%F3%A4%B9%A4%EB
 		final String TAG = "apListUp";
@@ -571,13 +617,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 //			dbMsg += ">>" +currentSysUpTime;
 //			dbMsg += "="+ df.format(currentSysUpTime);			dbMsg = ",date=" + date ;                                           //,date=Sun Dec 31 18:39:47 GMT+09:00 2017
 			long currentTimeMillis = System.currentTimeMillis();
-			dbMsg += ",currentTimeMillis(現在時刻)=" +currentTimeMillis + "="+ df.format(currentTimeMillis); //1514721782830=2017/12/31 21:03:02,
+			dbMsg += ",currentTimeMillis(現在時刻)=" + currentTimeMillis + "=" + df.format(currentTimeMillis); //1514721782830=2017/12/31 21:03:02,
 
-			long _elapsedRealtime =  elapsedRealtime();
-			dbMsg += ",elapsedRealtime=" + _elapsedRealtime + "="+ df.format(_elapsedRealtime);   //800437756=1970/01/10 15:20:37システム起動時からの経過時間。システムがdeep sleepになってた間の分もカウントに含まれる。
-			long	currentSysUpTime = currentTimeMillis - _elapsedRealtime;
-			dbMsg += ">システム起動時>" +currentSysUpTime;
-			dbMsg += "="+ df.format(currentSysUpTime);
+			long _elapsedRealtime = elapsedRealtime();
+			dbMsg += ",elapsedRealtime=" + _elapsedRealtime + "=" + df.format(_elapsedRealtime);   //800437756=1970/01/10 15:20:37システム起動時からの経過時間。システムがdeep sleepになってた間の分もカウントに含まれる。
+			long currentSysUpTime = currentTimeMillis - _elapsedRealtime;
+			dbMsg += ">システム起動時>" + currentSysUpTime;
+			dbMsg += "=" + df.format(currentSysUpTime);
 			wfManager = ( WifiManager ) MainActivity.this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);        //(android.content.Context.WIFI_SERVICE);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {                                                                         //APIL23以上
 //                @SuppressLint("WifiManagerLeak") WifiManager manager = (WifiManager) getSystemService(WIFI_SERVICE);
@@ -592,8 +638,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					wfManager.startScan();                         // APをスキャン
 					apList = wfManager.getScanResults();        // スキャン結果を取得
 					int tSize = apList.size();
-					list_up_count_tv.setText(tSize + "件");	;  //リストアップ件数
-					dbMsg += ","+tSize + "件";
+					list_up_count_tv.setText(tSize + "件");
+					;  //リストアップ件数
+					dbMsg += "," + tSize + "件";
 					retStr = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" +                    //APIL1
 							         ",timestamp" + ",intcenterFreq0" + ",centerFreq1" + ",channelWidth" + ",operatorFriendlyName" + ",venueName" +        //APIL17,23
 							         ",latitude" + ",longitude" + ",altitude" + ",accuracy" + ",pinpointing Time" + ",isConected" + "\n";                    //GPS
@@ -611,9 +658,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 						OneRecord += "," + apList.get(i).frequency;            //int ;APIL1;クライアントがアクセスポイントと通信しているチャネルの主要な20 MHz周波数（MHz単位）。
 						OneRecord += "," + apList.get(i).level;    //int ;//APIL1;検出された信号レベル（dBm）。RSSIとも呼ばれます。calculateSignalLevel(int, int)この数値をユーザーに表示できる絶対信号レベルに変換するために使用します。
 						OneRecord += "," + apList.get(i).capabilities;            //String ;APIL1;アクセスポイントでサポートされている認証、キー管理、および暗号化方式について説明します。
-						long timeStamp = apList.get(i).timestamp/1000;
-						dbMsg += ",timeStamp=" + timeStamp + "="+ df.format(timeStamp);
-						timeStamp= currentSysUpTime+ timeStamp;
+						long timeStamp = apList.get(i).timestamp / 1000;
+						dbMsg += ",timeStamp=" + timeStamp + "=" + df.format(timeStamp);
+						timeStamp = currentSysUpTime + timeStamp;
 						OneRecord += "," + df.format(timeStamp);            //long ;APIL17;この結果が最後に確認されたときのタイムスタンプ（ブート以降）。
 						if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
 							OneRecord += "," + apList.get(i).centerFreq0;            //int ;APIL23:APの帯域幅が20 MHzの場合は使用されませんAPが40,80または160 MHzを使用する場合、APが80 + 80 MHzを使用する場合の中心周波数（MHz）です。これは最初のセグメントの中心周波数）
@@ -1512,20 +1559,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	protected void sendAPData() {
 		final String TAG = "sendAPData";
 		String dbMsg = "";//"service=" + service.about();
-		 date = new Date(System.currentTimeMillis());
+		date = new Date(System.currentTimeMillis());
 
-		FILE_TITLE =(student_id_tv.getText() + "_" +  df.format(date) + ".csv").toString();
+		FILE_TITLE = (student_id_tv.getText() + "_" + df.format(date) + ".csv").toString();
 		if ( service == null ) {                                                                                //orgは onStartで
 			conectReady();
 		} else {
-				conectSaveStart();
-			}
+			conectSaveStart();
+		}
 		myLog(TAG, dbMsg);
 	}
+
 	protected void conectReady() {
 		final String TAG = "conectReady";
 		String dbMsg = "accountName=" + accountName;
 		try {
+			myLog(TAG, dbMsg);
 			if ( accountName.equals("") ) {
 				credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
 				startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
@@ -1535,8 +1584,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		} catch (Exception er) {
 			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
 		}
-		myLog(TAG, dbMsg);
 	}
+
 	/////http://vividcode.hatenablog.com/entry/20130908/1378613811////////////////////////////////////////////////////////////////////////////////////////////
 	protected void conectSaveStart() {
 		final String TAG = "conectSaveStart";
@@ -1564,7 +1613,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 				case REQUEST_ACCOUNT_PICKER:
 					if ( accountName != null ) {
 						if ( resultCode == RESULT_OK && data != null && data.getExtras() != null ) {
-							accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+							this.accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+							dbMsg += ",accountName=" + accountName;
 							conectSaveStart();
 						}
 					}
@@ -1593,7 +1643,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 				@Override
 				public void run() {
 					final String TAG = "saveTextToDrive_Thread";
-					String dbMsg = "FILE_TITLE="+FILE_TITLE;
+					String dbMsg = "FILE_TITLE=" + FILE_TITLE;
 					try {
 
 						File body = new File();
@@ -1610,12 +1660,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 //							}
 //						}
 //						if ( fileIdOrNull == null ) {
-							service.files().insert(body, content).execute();
-//				//			showToast("insert!");
+						service.files().insert(body, content).execute();
+//				//		Toast.makeText(getApplicationContext(), "insert!", Toast.LENGTH_SHORT).show();
 //							dbMsg += ">>insert" ;
 //						} else {
 //							service.files().update(fileIdOrNull, body, content).execute();
-//				//			showToast("update!");
+//						Toast.makeText(getApplicationContext(), "update!", Toast.LENGTH_SHORT).show();
 //							dbMsg += ">>update" ;
 //						}
 						// TODO 失敗時の処理?
@@ -1624,8 +1674,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 						startActivityForResult(er.getIntent(), REQUEST_AUTHORIZATION);
 					} catch (IOException er) {
 						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-				//		showToast("error occur...");
-			//			e.printStackTrace();
+						//			Toast.makeText(getApplicationContext(), "error occur..", Toast.LENGTH_SHORT).show();
+						//			e.printStackTrace();
 					}
 				}
 			});
@@ -1677,7 +1727,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 				} catch (UserRecoverableAuthIOException e) {
 					startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
 				} catch (IOException e) {
-					showToast("error occur...");
+					Toast.makeText(getApplicationContext(), "error occur..", Toast.LENGTH_SHORT).show();
 					e.printStackTrace();
 				}
 			}
@@ -1708,155 +1758,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		return new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
 	}
 
-	public void showToast(final String toast) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				final String TAG = "showToast";
-				String dbMsg = "開始";
-				try {
-					Toast.makeText(getApplicationContext(), toast, Toast.LENGTH_SHORT).show();
-				} catch (Exception er) {
-					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-				}
-				myLog(TAG, dbMsg);
-			}
-		});
-	}
-
-//
-//	@Override
-//	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//		super.onActivityResult(requestCode, resultCode, data);
-//		final String TAG = "onActivityResult";
-//		String dbMsg = "requestCode=" + requestCode + ",resultCode=" + resultCode;
-//		try {
-//			if ( requestCode == REQUEST_CODE_RESOLUTION && resultCode == RESULT_OK ) {// アクセス承認を得たので再接続開始
-//				dbMsg += ",isConnected=" + googleApiClient.isConnected();
-//				googleApiClient.connect();
-//				dbMsg += ">>" + googleApiClient.isConnected();
-//			}
-//		} catch (Exception er) {
-//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//		}
-//		myLog(TAG, dbMsg);
-//	}
-//
-//	@Override
-//	public void onConnected(@Nullable Bundle bundle) {      // 接続完了したのでDriveに新しいコンテンツを生成する
-//		final String TAG = "onConnected";
-//		String dbMsg = "→driveContentsResult" ;
-//		try {
-//			myLog(TAG, dbMsg);
-//			Drive.DriveApi.newDriveContents(googleApiClient).setResultCallback(driveContentsResultCallback);
-//		} catch (Exception er) {
-//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//		}
-//	}
-//
-//	@Override
-//	public void onConnectionSuspended(int i) {
-//		final String TAG = "onConnectionSuspended";
-//		String dbMsg = "i=" + i;
-//		try {
-//			myLog(TAG, dbMsg);
-//		} catch (Exception er) {
-//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//		}
-//	}
-//
-//	@Override
-//	public void onConnectionFailed(@NonNull ConnectionResult result) {
-//		final String TAG = "onConnectionFailed";
-//		String dbMsg = "hasResolution=" + result.hasResolution();
-//		try {
-//			if ( !result.hasResolution() ) {  // show the localized error dialog.
-//				GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
-//				return;
-//			}
-//			// ユーザにGoogle Driveへのアクセス承認ダイアログを表示する
-//			// onActivityResultに結果が通知されるので第二引数に指定したcodeで判別する
-//			result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
-//			myLog(TAG, dbMsg);
-//		} catch (IntentSender.SendIntentException er) {
-//			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//		}
-//	}
-//
-//	private final ResultCallback< DriveApi.DriveContentsResult > driveContentsResultCallback = new ResultCallback< DriveApi.DriveContentsResult >() {
-//		@Override
-//		public void onResult(@NonNull DriveApi.DriveContentsResult result) {
-//			final String TAG = "driveContentsResult";
-//			String dbMsg = "isSuccess="+result.getStatus().isSuccess();
-//			try {
-//				if ( !result.getStatus().isSuccess() ) {
-//					// Failed to create new content
-//					return;
-//				}
-//
-//				final DriveContents driveContents = result.getDriveContents();
-//
-//				OutputStream outputStream = driveContents.getOutputStream();
-//				Writer writer = new OutputStreamWriter(outputStream);
-//
-//				try {
-//					// 適当なJSONデータを書き込む
-//					JSONObject jsonObject = new JSONObject();
-//					jsonObject.put("key1", true).put("key2", 100.0).put("key3", 123);
-//					writer.write(jsonObject.toString());
-//					dbMsg += ",writer="+jsonObject.length() + "件";
-//					writer.close();
-//				} catch (JSONException | IOException er) {
-//					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//				}
-//
-//				// "sample.json"というファイル名でファイル保存する
-//				MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle("sample.json").setMimeType("text/plain").build();
-//				dbMsg += ",changeSet="+changeSet;
-//		//		dbMsg += ",driveContents="+driveContents.getOutputStream().toString();
-//				Drive.DriveApi.getAppFolder(googleApiClient).createFile(googleApiClient, changeSet, driveContents).setResultCallback(( ResultCallback< ? super DriveFolder.DriveFileResult > ) fileCallback);
-//				myLog(TAG, dbMsg);
-//			} catch (Exception er) {
-//				Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//			}
-//		}
-//
-//	};
-//
-//	private final ResultCallback< DriveFolder.DriveFileResult > fileCallback = new ResultCallback< DriveFolder.DriveFileResult >() {
-//		@Override
-//		public void onResult(@NonNull DriveFolder.DriveFileResult result) {
-//			final String TAG = "fileCallback";
-//			String dbMsg = "isSuccess=" + result.getStatus().isSuccess();
-//			try {
-//				if ( !result.getStatus().isSuccess() ) {
-//					// Failed to create a file
-//					return;
-//				}
-//				DriveId driveId = result.getDriveFile().getDriveId();
-//				// ファイルの作成に成功するとDriveIdが発行される
-//				// このDriveIdを保存しておくと、次回以降DriveIdを使ってファイル検索できる
-//				dbMsg += ",driveId==" + driveId;
-//				String mesStr = "送信ファイルId=" + driveId;
-//				Toast toast = Toast.makeText(MainActivity.this, mesStr, Toast.LENGTH_LONG);
-//				toast.show();
-//				googleApiClient.disconnect();                  // 接続解除
-//				dbMsg += ",isConnected=" + googleApiClient.isConnected();
-//				myLog(TAG, dbMsg);
-//			} catch (Exception er) {
-//				Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-//			}
-//		}
-//	};
-
-
-
-
-    /*
-    *
-    * ①無線LAN情報の取得方法
-
-http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
+	/*
+     * ①無線LAN情報の取得方法    http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
 
 上記Xamarin用ではなくAndroidStudio用のソースですが、同様のAPIがXamarinでも使えるはずです。
 多少APIやプロパティの名前が異なっていると思います。
@@ -1909,6 +1812,39 @@ hkuwayama@coresoft-net.co.jp        com.example.hkuwayama.nuloger
 
     * */
 
+	@Override
+	public void onConnected(@Nullable Bundle bundle) {
+		final String TAG = "onConnected";
+		String dbMsg = "開始";
+		try {
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		myLog(TAG, dbMsg);
+	}
+
+	@Override
+	public void onConnectionSuspended(int i) {
+		final String TAG = "onConnectionSuspended";
+		String dbMsg = "開始";
+		try {
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		myLog(TAG, dbMsg);
+	}
+
+	@Override
+	public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+		final String TAG = "onConnectionFailed";
+		String dbMsg = "開始";
+		try {
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+		}
+		myLog(TAG, dbMsg);
+	}
+
 	protected void actionDisconnect() {
 		final String TAG = "actionDisconnect";
 		String dbMsg = ",isConnected=" + googleApiClient.isConnected();
@@ -1938,18 +1874,30 @@ hkuwayama@coresoft-net.co.jp        com.example.hkuwayama.nuloger
 		}
 	}
 
-	@Override
-	public void onConnected(@Nullable Bundle bundle) {
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	//http://m-shige1979.hatenablog.com/entry/2015/01/17/080000
+	private int count = 0;
 
-	}
+	private MyTimerTask timerTask = null;
+	private Timer timer = null;
+	private Handler handler = new Handler();
 
-	@Override
-	public void onConnectionSuspended(int i) {
-
-	}
-
-	@Override
-	public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+	// タイマータスク用のクラス
+	class MyTimerTask extends TimerTask {
+		@Override
+		public void run() {
+			handler.post(new Runnable() {
+				public void run() {
+					final String TAG = "MyTimerTask";
+					String dbMsg = "開始";
+					try {
+						sendAPData();
+					} catch (Exception er) {
+						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+					}
+					myLog(TAG, dbMsg);
+				}
+			});
+		}
 	}
 }
