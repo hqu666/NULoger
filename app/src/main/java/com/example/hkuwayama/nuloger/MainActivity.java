@@ -102,13 +102,19 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 
+import static android.os.SystemClock.elapsedRealtime;
+import static android.os.SystemClock.elapsedRealtimeNanos;
+import static android.os.SystemClock.uptimeMillis;
+
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-//  {
+	public final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+	public Date date;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.activity_main);
 		Toolbar toolbar = ( Toolbar ) findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
@@ -468,6 +474,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	public List< ScanResult > apList;        // (imamnoWiFi実行後)スキャン結果を取得
 
 	///参照　①　http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
+	///Wifiの電波強度によって、接続先の無線LANスポットを変える方法        http://web-terminal.blogspot.jp/2013/12/wifilan.html
+	///WifiConfigController                    https://kokufu.blogspot.jp/2016/11/android-wi-fi-scanresult.html
+	///Wi-Fi Aware(APIL26)                                   https://developer.android.com/guide/topics/connectivity/wifi-aware.html?hl=ja
 	public void apListUp() {                //圏内にあるSSIDをリストアップ		http://seesaawiki.jp/w/moonlight_aska/d/WiFi%A4%CEAP%A4%F2%A5%B9%A5%AD%A5%E3%A5%F3%A4%B9%A4%EB
 		final String TAG = "apListUp";
 		String dbMsg = null;
@@ -550,9 +559,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		String dbMsg = null;
 		String retStr = "";
 		try {
-			final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-			final Date date = new Date(System.currentTimeMillis());
+//			final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+//			final Date date = new Date(System.currentTimeMillis());
+//	//		dbMsg += ",uptimeMillis=" + uptimeMillis();        //システム起動時からの経過時間。システムがdeep sleepになったりした間はカウントが止まる。     uptimeMillis=636705137
+//					long currentSysUpTime = currentTimeMillis - uptimeMillis();
+//			dbMsg += ">currentSysUpTime>" +currentSysUpTime;                //currentTimeMillis=1514713190995>currentSysUpTime>1514073455131
+//			dbMsg += "="+ df.format(currentSysUpTime);
+//
+//			dbMsg += ",elapsedRealtimeNanos=" + elapsedRealtimeNanos();   //elapsedRealtimeNanos=788815193626873
+//			 currentSysUpTime = currentTimeMillis - elapsedRealtimeNanos();
+//			dbMsg += ">>" +currentSysUpTime;
+//			dbMsg += "="+ df.format(currentSysUpTime);			dbMsg = ",date=" + date ;                                           //,date=Sun Dec 31 18:39:47 GMT+09:00 2017
+			long currentTimeMillis = System.currentTimeMillis();
+			dbMsg += ",currentTimeMillis(現在時刻)=" +currentTimeMillis + "="+ df.format(currentTimeMillis); //1514721782830=2017/12/31 21:03:02,
 
+			long _elapsedRealtime =  elapsedRealtime();
+			dbMsg += ",elapsedRealtime=" + _elapsedRealtime + "="+ df.format(_elapsedRealtime);   //800437756=1970/01/10 15:20:37システム起動時からの経過時間。システムがdeep sleepになってた間の分もカウントに含まれる。
+			long	currentSysUpTime = currentTimeMillis - _elapsedRealtime;
+			dbMsg += ">システム起動時>" +currentSysUpTime;
+			dbMsg += "="+ df.format(currentSysUpTime);
 			wfManager = ( WifiManager ) MainActivity.this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);        //(android.content.Context.WIFI_SERVICE);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {                                                                         //APIL23以上
 //                @SuppressLint("WifiManagerLeak") WifiManager manager = (WifiManager) getSystemService(WIFI_SERVICE);
@@ -567,10 +592,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					wfManager.startScan();                         // APをスキャン
 					apList = wfManager.getScanResults();        // スキャン結果を取得
 					int tSize = apList.size();
-					list_up_count_tv.setText(tSize + "件");
-					;  //リストアップ件数
-
-					dbMsg = tSize + "件";
+					list_up_count_tv.setText(tSize + "件");	;  //リストアップ件数
+					dbMsg += ","+tSize + "件";
 					retStr = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" +                    //APIL1
 							         ",timestamp" + ",intcenterFreq0" + ",centerFreq1" + ",channelWidth" + ",operatorFriendlyName" + ",venueName" +        //APIL17,23
 							         ",latitude" + ",longitude" + ",altitude" + ",accuracy" + ",pinpointing Time" + ",isConected" + "\n";                    //GPS
@@ -588,7 +611,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 						OneRecord += "," + apList.get(i).frequency;            //int ;APIL1;クライアントがアクセスポイントと通信しているチャネルの主要な20 MHz周波数（MHz単位）。
 						OneRecord += "," + apList.get(i).level;    //int ;//APIL1;検出された信号レベル（dBm）。RSSIとも呼ばれます。calculateSignalLevel(int, int)この数値をユーザーに表示できる絶対信号レベルに変換するために使用します。
 						OneRecord += "," + apList.get(i).capabilities;            //String ;APIL1;アクセスポイントでサポートされている認証、キー管理、および暗号化方式について説明します。
-						long timeStamp = apList.get(i).timestamp;
+						long timeStamp = apList.get(i).timestamp/1000;
+						dbMsg += ",timeStamp=" + timeStamp + "="+ df.format(timeStamp);
+						timeStamp= currentSysUpTime+ timeStamp;
 						OneRecord += "," + df.format(timeStamp);            //long ;APIL17;この結果が最後に確認されたときのタイムスタンプ（ブート以降）。
 						if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
 							OneRecord += "," + apList.get(i).centerFreq0;            //int ;APIL23:APの帯域幅が20 MHzの場合は使用されませんAPが40,80または160 MHzを使用する場合、APが80 + 80 MHzを使用する場合の中心周波数（MHz）です。これは最初のセグメントの中心周波数）
@@ -655,7 +680,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 		return retStr;
 	}
-
 
 	public void getNowConectInfo() {                //接続先情報
 		final String TAG = "getNowConect";
@@ -1488,19 +1512,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	protected void sendAPData() {
 		final String TAG = "sendAPData";
 		String dbMsg = "";//"service=" + service.about();
+		 date = new Date(System.currentTimeMillis());
+
+		FILE_TITLE =(student_id_tv.getText() + "_" +  df.format(date) + ".csv").toString();
 		if ( service == null ) {                                                                                //orgは onStartで
+			conectReady();
+		} else {
+				conectSaveStart();
+			}
+		myLog(TAG, dbMsg);
+	}
+	protected void conectReady() {
+		final String TAG = "conectReady";
+		String dbMsg = "accountName=" + accountName;
+		try {
 			if ( accountName.equals("") ) {
 				credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
 				startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
 			} else {
-
+				conectSaveStart();
 			}
-
+		} catch (Exception er) {
+			Log.e(TAG, dbMsg + ";でエラー発生；" + er);
 		}
-		FILE_TITLE = ( String ) (student_id_tv.getText() + "_" + timestanp_tv.getText()) + ".csv";
 		myLog(TAG, dbMsg);
 	}
-
 	/////http://vividcode.hatenablog.com/entry/20130908/1378613811////////////////////////////////////////////////////////////////////////////////////////////
 	protected void conectSaveStart() {
 		final String TAG = "conectSaveStart";
