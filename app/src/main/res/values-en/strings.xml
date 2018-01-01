@@ -102,8 +102,7 @@
     <string name="info_a_name">The name that I set</string>
     <string name="info_a_setuzoku">connection</string>
     <string name="info_a_setudann">disconnect</string>
-
-
+	<string name="acountName">Account Name</string>
 
 
 </resources>

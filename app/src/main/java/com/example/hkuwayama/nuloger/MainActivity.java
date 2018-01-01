@@ -112,8 +112,10 @@ import static android.os.SystemClock.uptimeMillis;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 	public final DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+	public final DateFormat dffn = new SimpleDateFormat("yyyyMMddHHmmss");
 	public Date date;
 	public int WaitingScond = 5;
+	public String  student_id="1234567890";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +128,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		fab.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				sendDatas();
+				String titolStr = "1レコードだけ送信";
+				String msgStr = "連続送信する場合は「記録開始」ボタンをONにして下さい。";
+				new AlertDialog.Builder(MainActivity.this).setTitle(titolStr).setMessage(msgStr).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						sendDatas();
+					}
+				}).
+						  setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+							  @Override
+							  public void onClick(DialogInterface dialog, int which) {
+								  //					Toast.makeText(MainActivity.this, " 必要が生じましたら再度お尋ねします。", Toast.LENGTH_LONG).show();
+							  }
+						  }).create().show();
 			}
 		});
 
@@ -179,10 +194,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		return super.onOptionsItemSelected(item);
 	}
 
-
 	public void callQuit() {
-		if(null != timer){
-			timer.cancel();     							// タイマーをキャンセル
+		if ( null != timer ) {
+			timer.cancel();                                // タイマーをキャンセル
 			timer = null;
 		}
 		if ( googleApiClient != null ) {
@@ -437,7 +451,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 	//メイン画面の設定///////////////////////////////////////////////////////////////////////////////////
 	public ListView ap_lv;
+	public TextView accountName_tv;   //送信先
 	public TextView student_id_tv;      //送信者；学籍番号
+	public TextView send_time_tv;   //送信時刻
 	public TextView timestanp_tv;       //送信時刻；もしくはGPS
 	public TextView latitude_tv;        //緯度
 	public TextView longitude_tv;       //経度
@@ -450,8 +466,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 	public void setMainVeiw() {
 		ap_lv = ( ListView ) findViewById(R.id.ap_lv);
+		accountName_tv = ( TextView ) findViewById(R.id.accountName_tv);   //送信先
+		accountName_tv.setText("");
 		student_id_tv = ( TextView ) findViewById(R.id.student_id_tv);   //送信者；学籍番号
-		student_id_tv.setText("1234567890");
+		student_id_tv.setText(student_id);
+		send_time_tv = ( TextView ) findViewById(R.id.send_time_tv);   //送信時刻
+		send_time_tv.setText("");
 		timestanp_tv = ( TextView ) findViewById(R.id.timestanp_tv);     //送信時刻；もしくはGPS
 		latitude_tv = ( TextView ) findViewById(R.id.latitude_tv);       //緯度
 		longitude_tv = ( TextView ) findViewById(R.id.longitude_tv);     //
@@ -484,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 				final String TAG = "record_start_sw";
 				String dbMsg = "isChecked=" + isChecked;
 				try {
-					if(isChecked){
+					if ( isChecked ) {
 						getGPSDatas();
 						if ( null != timer ) {                        // 稼働中の場合は止める
 							timer.cancel();
@@ -494,9 +514,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 						timerTask = new MyTimerTask();                // タイマータスクインスタンスを作成
 						dbMsg += ",WaitingScond=" + WaitingScond;
 						timer.schedule(timerTask, 0, WaitingScond * 1000);                // タイマースケジュールを設定
-					} else{
-						if(null != timer){
-							timer.cancel();     							// タイマーをキャンセル
+					} else {
+						if ( null != timer ) {
+							timer.cancel();                                // タイマーをキャンセル
 							timer = null;
 						}
 					}
@@ -584,6 +604,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 							dbMsg = dbMsg + ",items=" + items;
 							Log.i(TAG, dbMsg);
 							String Listitems = aps[position].replace(",", "\n");
+
 							new AlertDialog.Builder(MainActivity.this).setTitle(bssid + "の詳細").setMessage(Listitems).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 								@Override
 								public void onClick(DialogInterface dialog, int which) {
@@ -646,7 +667,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 							         ",latitude" + ",longitude" + ",altitude" + ",accuracy" + ",pinpointing Time" + ",isConected" + "\n";                    //GPS
 					for ( int i = 0 ; i < apList.size() ; i++ ) {
 						dbMsg += "\n(" + i + "/" + apList.size() + ")";
-						String OneRecord = ( String ) student_id_tv.getText() + "," + df.format(date);
+						String OneRecord = student_id + "," + df.format(date);
 //ScanResultのフィールド	https://developer.android.com/reference/android/net/wifi/ScanResult.html////
 						String sSID = apList.get(i).SSID;
 						OneRecord += "," + sSID;                                    //String SSID;APIL1;ネットワーク名
@@ -768,14 +789,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 			}
 			String titolStr = "現在の接続;WifiInfo";
 			messageShow(titolStr, mggStr);
-//            new AlertDialog.Builder(MainActivity.this)
-//                    .setTitle("現在の接続;WifiInfo").
-//                    setMessage(mggStr).
-//                    setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialog, int which) {
-//                        }
-//                    }).create().show();
 			Log.i(TAG, dbMsg);
 		} catch (NullPointerException e) {
 			Log.e(TAG, dbMsg + "で" + e.toString());// 適切な例外処理をしてください。
@@ -1560,8 +1573,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		final String TAG = "sendAPData";
 		String dbMsg = "";//"service=" + service.about();
 		date = new Date(System.currentTimeMillis());
-
-		FILE_TITLE = (student_id_tv.getText() + "_" + df.format(date) + ".csv").toString();
+		send_time_tv.setText(df.format(date));
+		accountName_tv.setText(accountName);
+		FILE_TITLE = (student_id+ "_" + dffn.format(date) + ".csv").toString();
 		if ( service == null ) {                                                                                //orgは onStartで
 			conectReady();
 		} else {
@@ -1577,6 +1591,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 			myLog(TAG, dbMsg);
 			if ( accountName.equals("") ) {
 				credential = GoogleAccountCredential.usingOAuth2(this, Arrays.asList(DriveScopes.DRIVE));   //アカウントの選択画面を表示
+//				if(credential.){
+//
+//				}
 				startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
 			} else {
 				conectSaveStart();
@@ -1759,7 +1776,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	}
 
 	/*
-     * ①無線LAN情報の取得方法    http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
+	 * ①無線LAN情報の取得方法    http://seesaawiki.jp/w/moonlight_aska/d/WiFi%C0%DC%C2%B3%BE%F0%CA%F3%A4%F2%BC%E8%C6%C0%A4%B9%A4%EB
 
 上記Xamarin用ではなくAndroidStudio用のソースですが、同様のAPIがXamarinでも使えるはずです。
 多少APIやプロパティの名前が異なっていると思います。

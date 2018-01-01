@@ -102,6 +102,14 @@
     <string name="info_a_name">設定した名称</string>
     <string name="info_a_setuzoku">接続</string>
     <string name="info_a_setudann">切断</string>
+    <string name="account_Name">送信先</string>
+    <string name="measurementSpot">測定座標</string>
+    <string name="recordInterval">記録間隔</string>
+    <string name="recordStart">記録開始</string>
+    <string name="senderName">送信者</string>
+    <string name="second_disp">[秒]</string>
+    <string name="access_point_of_the_range">圏内のAP</string>
+    <string name="matter_str">件</string>
 
 
 </resources>

@@ -39,25 +39,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_span="2"
-                    android:text="記録開始"
+                    android:text="@string/recordStart"
                     android:textSize="14sp"
                     tools:layout_editor_absoluteX="8dp"
-                    tools:layout_editor_absoluteY="103dp" />
-
-                <TextView
-                    android:id="@+id/textView14"
-                    android:layout_width="62dp"
-                    android:layout_height="wrap_content"
-                    android:layout_span="1"
-                    android:text="送信者:"
-                    android:textAlignment="textEnd" />
-
-                <TextView
-                    android:id="@+id/student_id_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_span="2"
-                    android:text="学籍番号" />
+                    tools:layout_editor_absoluteY="103dp"/>
             </TableRow>
 
             <TableRow
@@ -66,19 +51,13 @@
                 android:layout_marginTop="2dp">
 
                 <TextView
-                    android:id="@+id/textView12"
+                    android:id="@+id/textView21"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_span="1"
-                    android:text="記録間隔"
+                    android:text="@string/recordInterval"
                     android:textAppearance="@style/TextAppearance.AppCompat"
-                    android:textSize="14sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintHorizontal_bias="0.025"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintVertical_bias="0.298" />
+                    android:textSize="14sp"/>
 
                 <Spinner
                     android:id="@+id/step_spinner"
@@ -89,22 +68,15 @@
                     android:entries="@array/step_list"
                     android:textSize="24sp"
                     tools:layout_editor_absoluteX="144dp"
-                    tools:layout_editor_absoluteY="147dp" />
+                    tools:layout_editor_absoluteY="147dp"/>
 
                 <TextView
-                    android:id="@+id/textView2"
-                    android:layout_width="121dp"
-                    android:layout_height="wrap_content"
-                    android:layout_span="1"
-                    android:text="[秒]"
-                    android:textAppearance="@style/TextAppearance.AppCompat" />
-
-                <TextView
-                    android:id="@+id/timestanp_tv"
+                    android:id="@+id/textView23"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_span="2"
-                    android:text="測位時刻" />
+                    android:layout_span="1"
+                    android:text="@string/second_disp"
+                    android:textAppearance="@style/TextAppearance.AppCompat"/>
             </TableRow>
 
             <TableRow
@@ -118,37 +90,123 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_span="1"
-                    android:text="測定座標"
+                    android:text="@string/measurementSpot"
                     android:textAppearance="@style/TextAppearance.AppCompat"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"/>
 
                 <TextView
                     android:id="@+id/latitude_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_span="1"
-                    android:text="緯度"
-                    android:textSize="14sp" />
+                    android:layout_span="2"
+                    android:text="35.0000000000"
+                    android:textSize="14sp"/>
 
                 <TextView
                     android:id="@+id/longitude_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="経度" />
+                    android:layout_span="3"
+                    android:text="134.0000000000"/>
+
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:layout_marginTop="2dp">
+
+
+                <TextView
+                    android:id="@+id/timestanp_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="2"
+                    android:text="2017/12/31 23:59;59"
+                    android:textAlignment="textEnd"
+                    />
+
 
                 <TextView
                     android:id="@+id/altitude_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="標高" />
+                    android:layout_span="2"
+                    android:text="999"
+                    android:textAlignment="textEnd"/>
+
+                <TextView
+                    android:id="@+id/textView6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="[m]"/>
 
                 <TextView
                     android:id="@+id/accuracy_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_span="1"
                     android:text="精度"
                     android:textColor="@color/colorAccent" />
             </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/textView51"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="1"
+                    android:text="@string/account_Name"
+                    android:textAppearance="@style/TextAppearance.AppCompat"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/accountName_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="6"
+                    android:text="sousinnsaki@gmail.com"
+                    android:textSize="14sp"/>
+
+
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+
+                <TextView
+                    android:id="@+id/textView61"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="1"
+                    android:text="@string/senderName"
+                    android:textAlignment="textStart"
+                    />
+
+                <TextView
+                    android:id="@+id/student_id_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="1"
+                    android:text="1234567890"/>
+
+                <TextView
+                    android:id="@+id/send_time_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="4"
+                    android:text="2017/12/31 23:59;59"
+                    android:textAlignment="textStart"/>
+            </TableRow>
+
 
         </TableLayout>
 
@@ -169,13 +227,14 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/textView4"
+                android:id="@+id/textView91"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="left"
-                android:text="圏内のAP"
-                android:textAlignment="textEnd" />
+                android:text="@string/access_point_of_the_range"
+                android:textAlignment="textEnd"
+                />
 
             <TextView
                 android:id="@+id/list_up_count_tv"
@@ -186,11 +245,11 @@
                 android:textAlignment="center" />
 
             <TextView
-                android:id="@+id/textView7"
+                android:id="@+id/textView97"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="6"
-                android:text="件" />
+                android:text="@string/matter_str"/>
         </LinearLayout>
 
     </LinearLayout>
