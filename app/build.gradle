@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 26
     defaultConfig {
         applicationId "com.example.hkuwayama.nuloger"
         minSdkVersion 19
-        targetSdkVersion 25
+        targetSdkVersion 26
         multiDexEnabled true
         versionCode 1
         versionName "1.0"
@@ -17,24 +17,32 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    productFlavors {
+    }
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleCompatible
-    implementation 'com.android.support:appcompat-v7:25.1.0'
-    implementation 'com.android.support:design:25.1.0'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:design:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    implementation 'com.android.support:support-v4:25.1.0'
+    implementation 'com.android.support:support-v4:26.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    compile 'com.android.support:preference-v14:25.1.0'
-    compile 'com.google.android.gms:play-services:11.0.2'
+    compile 'com.android.support:preference-v14:26.1.0'
+    //noinspection UseOfBundledGooglePlayServices
+    compile 'com.google.android.gms:play-services:11.8.0'
     compile 'com.google.apis:google-api-services-drive:v2-rev96-1.16.0-rc'
     compile 'com.google.http-client:google-http-client-gson:1.16.0-rc'
     compile 'com.google.api-client:google-api-client-android:1.16.0-rc'
-    compile 'com.android.support:support-annotations:25.1.0'
+    compile 'com.android.support:support-annotations:27.0.2'
 }
-            //エラー :Execution failed for task ':app:transformDexArchiveWithExternalLibsDexMergerForDebug'.
-//java.lang.RuntimeException: java.lang.RuntimeException: com.android.builder.dexing.DexArchiveMergerException: Unable to merge dex
+            //エラー :(1, 1) A problem occurred evaluating project ':app'.
+// Failed to apply plugin [id 'com.android.application']
+//Gradle version 2.10 is required. Current version is 4.1. If using the gradle wrapper, try editing the distributionUrl in H:\develop\an\workspace\NULoger\gradle\wrapper\gradle-wrapper.properties to gradle-2.10-all.zip
+//Could not find method implementation() for arguments [directory 'libs'] on object of type org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler. Open File

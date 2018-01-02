@@ -102,7 +102,18 @@
     <string name="info_a_name">The name that I set</string>
     <string name="info_a_setuzoku">connection</string>
     <string name="info_a_setudann">disconnect</string>
-	<string name="acountName">Account Name</string>
+    <string name="account_Name">Account Name</string>
+    <string name="measurementSpot">Measurement Spot</string>
+    <string name="recordInterval">Record Interval</string>
+    <string name="recordStart">Record Start</string>
+    <string name="senderName">Sender Name</string>
+    <string name="second_disp">second disp</string>
+    <string name="access_point_of_the_range">access point of the range</string>
+    <string name="matter_str">matter str</string>
+    <string name="acountName">"Acount Name"</string>
+	<string name="current_connection">current connection AP</string>
+    <string name="main_screen">main screen</string>
+    <string name="present_location_confirmation">present location confirmation</string>
 
 
 </resources>

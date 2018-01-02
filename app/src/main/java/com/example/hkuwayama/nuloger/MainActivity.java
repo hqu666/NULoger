@@ -155,6 +155,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 	}
 
+	//ヘッダーアイコンのタップ
 	@Override
 	public void onBackPressed() {
 		DrawerLayout drawer = ( DrawerLayout ) findViewById(R.id.drawer_layout);
@@ -165,6 +166,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		}
 	}
 
+
+	///メイン画面へメニュー追加
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -172,22 +175,37 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		return true;
 	}
 
+	///メニューから各機能へ
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if ( id == R.id.action_prefarence ) {               //設定
-			callSetting();
+		if ( id == R.id.mm_main ) {                            //メイン画面
 			return true;
-		} else if ( id == R.id.action_disconnect ) {               //回線切断
+		} else if ( id == R.id.mm_conected ) {                                   //接続先AP
+			getNowConect();
+			return true;
+		} else if ( id == R.id.mm_present_location_confirmation ) {       //現在地確認
+			presentLocation();
+			return true;
+		} else if ( id == R.id.mm_share ) {                    //登録済みログの表示
+			makeList();
+			return true;
+		} else if ( id == R.id.mm_send ) {                                     //今すぐ保存する
+			sendDatas();
+			return true;
+		} else if ( id == R.id.mm_transmission_change ) {                    //送信先変更
+			transmissionChange();
+			return true;
+		} else if ( id == R.id.mm_disconect ) {                    //回戦切断
 			actionDisconnect();
 			return true;
-
-		} else if ( id == R.id.action_quit ) {               //終了
+		} else if ( id == R.id.mm_prefarence ) {                 //設定
+			callSetting();
+			return true;
+		} else if ( id == R.id.mm_quit ) {        //
 			callQuit();
 			return true;
 		}
@@ -211,16 +229,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		// Handle navigation view item clicks here.
 		int id = item.getItemId();
 
-		if ( id == R.id.nav_main ) {
-		} else if ( id == R.id.nav_conected ) {
+		if ( id == R.id.nav_main ) {                            //メイン画面
+		} else if ( id == R.id.nav_conected ) {                                   //接続先AP
 			getNowConect();
-		} else if ( id == R.id.nav_prefarence ) {
-			callSetting();
-		} else if ( id == R.id.nav_send ) {
-			sendDatas();
-		} else if ( id == R.id.nav_share ) {
+		} else if ( id == R.id.nav_present_location_confirmation ) {       //現在地確認
+			presentLocation();
+		} else if ( id == R.id.nav_share ) {                    //登録済みログの表示
 			makeList();
-		} else if ( id == R.id.nav_quit ) {
+		} else if ( id == R.id.nav_send ) {                                     //今すぐ保存する
+			sendDatas();
+		} else if ( id == R.id.nav_transmission_change ) {                    //送信先変更
+			transmissionChange();
+		} else if ( id == R.id.nav_disconect ) {                    //回戦切断
+			actionDisconnect();
+		} else if ( id == R.id.nav_prefarence ) {                 //設定
+			callSetting();
+		} else if ( id == R.id.nav_quit ) {        //
 			callQuit();
 		}
 		DrawerLayout drawer = ( DrawerLayout ) findViewById(R.id.drawer_layout);
@@ -339,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		} else if ( writeExternalStorage != PackageManager.PERMISSION_GRANTED ) {
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE ,}, rp_getGPSInfo);
 		} else {
-			loadTextFromDrive();                //http://vividcode.hatenablog.com/entry/20130908/1378613811/
+	//		loadTextFromDrive();                //http://vividcode.hatenablog.com/entry/20130908/1378613811/
 			String titolStr = "現在作成中";
 			String mggStr = "ログのリストアップは現在考案中です";
 			messageShow(titolStr, mggStr);
@@ -747,6 +771,30 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		}
 
 		return retStr;
+	}
+
+	//送信先変更
+	public void transmissionChange(){
+		String titolStr = "接続先変更";
+		String mggStr = "現在の接続先:" + accountName +"を一旦消去します。次に送信操作を行う時にアカウント設定ダイアログが表示されます。";
+		new AlertDialog.Builder(this).setTitle(titolStr).setMessage(mggStr).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				MainActivity.this.accountName ="";
+			}
+		}).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		}).create().show();
+	}
+
+
+		 	 	 ///GPSで表示された座標が正しいか確認し、修正する機能です
+	public void presentLocation(){
+		String titolStr = "現在作成中";
+		String mggStr = "GPSで表示された座標が正しいか確認し、修正する機能です";
+		messageShow(titolStr, mggStr);
 	}
 
 	public void getNowConectInfo() {                //接続先情報
@@ -1864,9 +1912,12 @@ hkuwayama@coresoft-net.co.jp        com.example.hkuwayama.nuloger
 
 	protected void actionDisconnect() {
 		final String TAG = "actionDisconnect";
-		String dbMsg = ",isConnected=" + googleApiClient.isConnected();
-		googleApiClient.disconnect();                  // 接続解除
-		dbMsg += ">>" + googleApiClient.isConnected();
+		String dbMsg ="";
+		if(googleApiClient != null){
+			dbMsg = ",isConnected=" + googleApiClient.isConnected();
+			googleApiClient.disconnect();                  // 接続解除
+			dbMsg += ">>" + googleApiClient.isConnected();
+		}
 		myLog(TAG, dbMsg);
 	}
 

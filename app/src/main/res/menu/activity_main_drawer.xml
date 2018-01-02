@@ -8,16 +8,20 @@
         <item
             android:id="@+id/nav_main"
             android:icon="@android:drawable/ic_dialog_dialer"
-            android:title="メイン画面" />
+            android:title="@string/main_screen"/>
         <item
             android:id="@+id/nav_conected"
             android:icon="@android:drawable/ic_popup_sync"
-            android:title="現在の接続先" />
+            android:title="@string/current_connection"/>
         <item
-            android:id="@+id/nav_prefarence"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="設定"
-            app:showAsAction="always|withText" />
+            android:id="@+id/nav_present_location_confirmation"
+            android:icon="@android:drawable/ic_dialog_map"
+            android:title="@string/present_location_confirmation"/>
+        <item
+            android:id="@+id/nav_share"
+            android:icon="@android:drawable/stat_sys_download"
+            android:title="@string/Indication_of_the_registered_log"
+            app:showAsAction="collapseActionView"/>
     </group>
 
     <item
@@ -25,14 +29,22 @@
         app:showAsAction="collapseActionView">
         <menu>
             <item
-                android:id="@+id/nav_share"
-                android:icon="@drawable/ic_menu_share"
-                android:title="登録済みログの表示"
-                app:showAsAction="collapseActionView" />
-            <item
                 android:id="@+id/nav_send"
-                android:icon="@drawable/ic_menu_send"
-                android:title="今すぐ保存する" />
+                android:icon="@android:drawable/stat_sys_upload_done"
+                android:title="@string/save_it_right_now"/>
+            <item
+                android:id="@+id/nav_transmission_change"
+                android:icon="@drawable/ic_menu_share"
+                android:title="@string/transmission_change"/>
+            <item
+                android:id="@+id/nav_disconect"
+                android:icon="?android:attr/actionModeCutDrawable"
+                android:title="@string/info_a_setudann"/>
+            <item
+                android:id="@+id/nav_prefarence"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="@string/action_settings"
+                app:showAsAction="always|withText"/>
         </menu>
     </item>
     <item

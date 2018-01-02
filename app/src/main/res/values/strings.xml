@@ -110,6 +110,13 @@
     <string name="second_disp">[秒]</string>
     <string name="access_point_of_the_range">圏内のAP</string>
     <string name="matter_str">件</string>
+    <string name="acountName">アカウント</string>
+	<string name="main_screen">メイン画面</string>
+    <string name="current_connection">接続先</string>
+    <string name="present_location_confirmation">現在地確認</string>
+    <string name="transmission_change">送信先変更</string>
+    <string name="Indication_of_the_registered_log">登録済みログの表示</string>
+    <string name="save_it_right_now">今すぐ保存する</string>
 
 
 </resources>
