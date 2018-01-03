@@ -28,6 +28,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -116,6 +117,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	public Date date;
 	public int WaitingScond = 5;
 	public String  student_id="1234567890";
+	public int fragmentNo = -1;
+	public MainFragment mainFragment;                     		//メイン画面
+	public FloatingActionButton fab;
+	public int mainFragmentNo = 1;
+	public MyPreferenceFragment myPreferenceFragment=null;		//設定画面
+	public int myPreferenceFragmentNo = 2;
+	public webFragment webFragment=null;	                	//web画面
+	public int webFragmentNo = 3;
+	public LocationManager locationManager;
+	double latitudeVal = -1;// 緯度の表示
+	public String latitudeStr = "";
+	double longitudeVal = -1;       // 経度の表示
+	public String LongtudeStr = "";
+	double accuracyVal = -1;                //精度
+	public String accuracyStr = "";
+	double altitudeVal = -1;                //標高
+	public String altitudeStr = "";
+	double pinpointingTimeVal = 0;                //測位時刻
+	public String pinpointingTimeValStr = "";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -124,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		setContentView(R.layout.activity_main);
 		Toolbar toolbar = ( Toolbar ) findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
-		FloatingActionButton fab = ( FloatingActionButton ) findViewById(R.id.fab);
+		fab = ( FloatingActionButton ) findViewById(R.id.fab);
 		fab.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -153,6 +173,40 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		NavigationView navigationView = ( NavigationView ) findViewById(R.id.nav_view);
 		navigationView.setNavigationItemSelectedListener(this);
 
+		///はじめてのFragment    https://qiita.com/Reyurnible/items/dffd70144da213e1208b//////
+		if (savedInstanceState == null) {
+			callMain();
+		}
+//		mainFragment = new MainFragment();	                                  	//メイン画面
+//		FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();		// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+//		transaction.replace(R.id.container, mainFragment);		// 新しく追加を行うのでaddを使用します メソッドの1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
+//		transaction.commit();  		// 最後にcommitを使用することで変更を反映します
+//		fragmentNo = mainFragmentNo;
+//		presentLocation();
+	}
+
+	public void callMain(){
+		final String TAG = "callMain";
+		String dbMsg ="";
+		FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();		// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+		if(mainFragment ==null){
+			mainFragment = new MainFragment();	                                  	//メイン画面
+			dbMsg +=",add";
+			transaction.add(R.id.container, mainFragment);		// 新しく追加を行うのでaddを使用します メソッドの1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
+			transaction.addToBackStack(null);
+		} else{
+			dbMsg +=",replace";
+			transaction.replace(R.id.container, mainFragment);//			transaction.add(R.id.container, mainFragment);		// 新しく追加を行うのでaddを使用します メソッドの1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
+		}
+	//	transaction.remove(mainFragment);
+		transaction.commit();  		// 最後にcommitを使用することで変更を反映します
+		dbMsg +=",fragmentNo="+fragmentNo;
+		fragmentNo = mainFragmentNo;
+		dbMsg +=">>"+fragmentNo;
+		fab.setVisibility(View.VISIBLE);
+		getGPSDatas();
+		getWiFiDatas();
+		myLog(TAG, dbMsg);
 	}
 
 	//ヘッダーアイコンのタップ
@@ -183,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if ( id == R.id.mm_main ) {                            //メイン画面
+			callMain();
 			return true;
 		} else if ( id == R.id.mm_conected ) {                                   //接続先AP
 			getNowConect();
@@ -213,9 +268,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	}
 
 	public void callQuit() {
-		if ( null != timer ) {
-			timer.cancel();                                // タイマーをキャンセル
-			timer = null;
+		if ( null != mainFragment.timer ) {
+			mainFragment.timer.cancel();                                // タイマーをキャンセル
+			mainFragment.timer = null;
 		}
 		if ( googleApiClient != null ) {
 			googleApiClient.disconnect();                  // 接続解除
@@ -230,6 +285,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		int id = item.getItemId();
 
 		if ( id == R.id.nav_main ) {                            //メイン画面
+			callMain();
 		} else if ( id == R.id.nav_conected ) {                                   //接続先AP
 			getNowConect();
 		} else if ( id == R.id.nav_present_location_confirmation ) {       //現在地確認
@@ -255,7 +311,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
-		setMainVeiw();          //メイン画面の設定
+		if(accuracyVal < 1){
+			getGPSDatas();
+		}
+	  if(fragmentNo == mainFragmentNo){
+			if( mainFragment.latitude_tv !=null){
+				mainFragment.setGPSFeild(latitudeVal,longitudeVal,altitudeVal,accuracyVal,pinpointingTimeValStr);
+			//	mainFragment.student_id_tv.setText(student_id);
+			}
+		  getWiFiDatas();
+	  } else if(fragmentNo == webFragmentNo){
+		  if( webFragment.wf_latitude_tv!= null) {
+			  webFragment.wf_latitude_tv.setText(":" + latitudeVal);
+			  webFragment.wf_longitude_tv.setText("/" + longitudeVal);
+			  webFragment.wf_altitude_tv.setText("/" + altitudeVal + "m");
+			  webFragment.wf_accuracy_tv.setText(";" + accuracyVal);
+		  }
+	  }
+
 	}
 
 
@@ -268,7 +341,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 			myLog(TAG, dbMsg);
 			switch ( keyCode ) {    //キーにデフォルト以外の動作を与えるもののみを記述★KEYCODE_MENUをここに書くとメニュー表示されない
 				case KeyEvent.KEYCODE_BACK:            //4KEYCODE_BACK :keyCode；09SH: keyCode；4,MyEvent=KeyEvent{action=0 code=4 repeat=0 meta=0 scancode=158 mFlags=72}
-					callQuit();
+					if(	fragmentNo == mainFragmentNo){
+						callQuit();
+					}else{
+						callMain();
+					}
 					return true;
 //				case KeyEvent.KEYCODE_HOME:            //3
 ////					ComponentName compNmae = startService(new Intent(MainActivity.this, NotificationChangeService.class));                           //     makeNotificationを持つクラスへ
@@ -342,17 +419,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		}
 	}
 
-	public void getGPSDatas() {
-		int accessFineLocation = -1;
-		accessFineLocation = ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION); //ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-		if ( accessFineLocation != PackageManager.PERMISSION_GRANTED ) {
-			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION ,}, rp_getGPSInfo);
-		} else {
-			locationStart();
-			locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, rp_getGPSInfo, 50, ( LocationListener ) this);
-		}
-	}
-
 	public void makeList() {
 		int readExternalStorage = -1;
 		readExternalStorage = ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -380,9 +446,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		} else if ( writeExternalStorage != PackageManager.PERMISSION_GRANTED ) {
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE ,}, rp_getGPSInfo);
 		} else {
-			String titolStr = "現在作成中";
-			String mggStr = "設定画面は現在考案中です";
-			messageShow(titolStr, mggStr);
+			if(myPreferenceFragment==null){
+				myPreferenceFragment = new MyPreferenceFragment();       		//設定画面
+			}
+			FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();		// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+			transaction.replace(R.id.container, myPreferenceFragment);//		transaction.add(R.id.container, myPreferenceFragment);		// 新しく追加を行うのでaddを使用します
+			// 他にも、よく使う操作で、replace removeといったメソッドがあります
+			// メソッドの1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
+			transaction.commit();  		// 最後にcommitを使用することで変更を反映します
+			fragmentNo = myPreferenceFragmentNo;
+			fab.setVisibility(View.GONE);
 		}
 	}
 
@@ -474,89 +547,88 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 	}
 
 	//メイン画面の設定///////////////////////////////////////////////////////////////////////////////////
-	public ListView ap_lv;
-	public TextView accountName_tv;   //送信先
-	public TextView student_id_tv;      //送信者；学籍番号
-	public TextView send_time_tv;   //送信時刻
-	public TextView timestanp_tv;       //送信時刻；もしくはGPS
-	public TextView latitude_tv;        //緯度
-	public TextView longitude_tv;       //経度
-	public TextView accuracy_tv;        //GPS測位制度
-	public TextView altitude_tv;        //標高
-	public TextView list_up_count_tv;  //リストアップ件数
+//	public ListView ap_lv;
+//	public TextView accountName_tv;   //送信先
+//	public TextView student_id_tv;      //送信者；学籍番号
+//	public TextView send_time_tv;   //送信時刻
+//	public TextView timestanp_tv;       //送信時刻；もしくはGPS
+//	public TextView latitude_tv;        //緯度
+//	public TextView longitude_tv;       //経度
+//	public TextView accuracy_tv;        //GPS測位制度
+//	public TextView altitude_tv;        //標高
+//	public TextView list_up_count_tv;  //リストアップ件数
+//
+//	public Switch record_start_sw;     //開始ボタン
+//	public Spinner step_spinner;       //測定間隔
 
-	public Switch record_start_sw;     //開始ボタン
-	public Spinner step_spinner;       //測定間隔
-
-	public void setMainVeiw() {
-		ap_lv = ( ListView ) findViewById(R.id.ap_lv);
-		accountName_tv = ( TextView ) findViewById(R.id.accountName_tv);   //送信先
-		accountName_tv.setText("");
-		student_id_tv = ( TextView ) findViewById(R.id.student_id_tv);   //送信者；学籍番号
-		student_id_tv.setText(student_id);
-		send_time_tv = ( TextView ) findViewById(R.id.send_time_tv);   //送信時刻
-		send_time_tv.setText("");
-		timestanp_tv = ( TextView ) findViewById(R.id.timestanp_tv);     //送信時刻；もしくはGPS
-		latitude_tv = ( TextView ) findViewById(R.id.latitude_tv);       //緯度
-		longitude_tv = ( TextView ) findViewById(R.id.longitude_tv);     //
-		accuracy_tv = ( TextView ) findViewById(R.id.accuracy_tv);       //GPS測位制度
-		altitude_tv = ( TextView ) findViewById(R.id.altitude_tv);       //標高
-		list_up_count_tv = ( TextView ) findViewById(R.id.list_up_count_tv);       //リストアップ件数
-
-		step_spinner = ( Spinner ) findViewById(R.id.step_spinner);       //測定間隔
-		step_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			public void onItemSelected(AdapterView< ? > parent, View viw, int position, long id) {                    //　アイテムが選択された時
-				final String TAG = "step_spinner";
-				String dbMsg = "position=" + position + ",id=" + id;
-				try {
-					String[] ids = getResources().getStringArray(R.array.step_list);
-					WaitingScond = Integer.parseInt(ids[position]);
-					dbMsg += ",WaitingScond=" + WaitingScond;
-				} catch (Exception er) {
-					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-				}
-				myLog(TAG, dbMsg);
-			}
-
-			public void onNothingSelected(AdapterView< ? > parent) {                //　アイテムが選択されなかった
-			}
-		});
-		record_start_sw = ( Switch ) findViewById(R.id.record_start_sw);   //開始ボタン
-		record_start_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-			//     @Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				final String TAG = "record_start_sw";
-				String dbMsg = "isChecked=" + isChecked;
-				try {
-					if ( isChecked ) {
-						getGPSDatas();
-						if ( null != timer ) {                        // 稼働中の場合は止める
-							timer.cancel();
-							timer = null;
-						}
-						timer = new Timer();                // タイマーインスタンスを作成
-						timerTask = new MyTimerTask();                // タイマータスクインスタンスを作成
-						dbMsg += ",WaitingScond=" + WaitingScond;
-						timer.schedule(timerTask, 0, WaitingScond * 1000);                // タイマースケジュールを設定
-					} else {
-						if ( null != timer ) {
-							timer.cancel();                                // タイマーをキャンセル
-							timer = null;
-						}
-					}
-				} catch (Exception er) {
-					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-				}
-				myLog(TAG, dbMsg);
-			}
-		});
-
-
-		getGPSDatas();
-//        getWiFiDatas();
-//接続先の無線LANスポットを変える方法        http://web-terminal.blogspot.jp/2013/12/wifilan.html
-		///WifiConfigController
-	}
+//	public void setMainVeiw() {
+//		ap_lv = ( ListView ) findViewById(R.id.ap_lv);
+//		accountName_tv = ( TextView ) findViewById(R.id.accountName_tv);   //送信先
+//		accountName_tv.setText("");
+//		student_id_tv = ( TextView ) findViewById(R.id.student_id_tv);   //送信者；学籍番号
+//		send_time_tv = ( TextView ) findViewById(R.id.send_time_tv);   //送信時刻
+//		send_time_tv.setText("");
+//		timestanp_tv = ( TextView ) findViewById(R.id.timestanp_tv);     //送信時刻；もしくはGPS
+//		latitude_tv = ( TextView ) findViewById(R.id.latitude_tv);       //緯度
+//		longitude_tv = ( TextView ) findViewById(R.id.longitude_tv);     //
+//		accuracy_tv = ( TextView ) findViewById(R.id.accuracy_tv);       //GPS測位制度
+//		altitude_tv = ( TextView ) findViewById(R.id.altitude_tv);       //標高
+//		list_up_count_tv = ( TextView ) findViewById(R.id.list_up_count_tv);       //リストアップ件数
+//
+//		step_spinner = ( Spinner ) findViewById(R.id.step_spinner);       //測定間隔
+//		step_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//			public void onItemSelected(AdapterView< ? > parent, View viw, int position, long id) {                    //　アイテムが選択された時
+//				final String TAG = "step_spinner";
+//				String dbMsg = "position=" + position + ",id=" + id;
+//				try {
+//					String[] ids = getResources().getStringArray(R.array.step_list);
+//					WaitingScond = Integer.parseInt(ids[position]);
+//					dbMsg += ",WaitingScond=" + WaitingScond;
+//				} catch (Exception er) {
+//					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//				}
+//				myLog(TAG, dbMsg);
+//			}
+//
+//			public void onNothingSelected(AdapterView< ? > parent) {                //　アイテムが選択されなかった
+//			}
+//		});
+//		record_start_sw = ( Switch ) findViewById(R.id.record_start_sw);   //開始ボタン
+//		record_start_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//			//     @Override
+//			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//				final String TAG = "record_start_sw";
+//				String dbMsg = "isChecked=" + isChecked;
+//				try {
+//					if ( isChecked ) {
+//						getGPSDatas();
+//						if ( null != timer ) {                        // 稼働中の場合は止める
+//							timer.cancel();
+//							timer = null;
+//						}
+//						timer = new Timer();                // タイマーインスタンスを作成
+//						timerTask = new MyTimerTask();                // タイマータスクインスタンスを作成
+//						dbMsg += ",WaitingScond=" + WaitingScond;
+//						timer.schedule(timerTask, 0, WaitingScond * 1000);                // タイマースケジュールを設定
+//					} else {
+//						if ( null != timer ) {
+//							timer.cancel();                                // タイマーをキャンセル
+//							timer = null;
+//						}
+//					}
+//				} catch (Exception er) {
+//					Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//				}
+//				myLog(TAG, dbMsg);
+//			}
+//		});
+//
+//
+//		getGPSDatas();
+////        getWiFiDatas();
+////接続先の無線LANスポットを変える方法        http://web-terminal.blogspot.jp/2013/12/wifilan.html
+//		///WifiConfigController
+//	}
 
 	//ap情報取得///////////////////////////////////////////////////////////////////////////////////
 	public WifiManager wfManager;
@@ -583,7 +655,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					wfManager.startScan();                         // APをスキャン
 					apList = wfManager.getScanResults();        // スキャン結果を取得
 					int tSize = apList.size();
-					list_up_count_tv.setText(tSize + "件");
+					mainFragment.list_up_count_tv.setText(tSize + "件");
 					;  //リストアップ件数
 
 					dbMsg = tSize + "件";
@@ -608,8 +680,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					dbMsg = dbMsg + setuzokuCount + "件";
 					//       setuzokukanou_tv.setText(String.valueOf(setuzokuCount)); 				//接続可能機器数
 					ArrayAdapter< String > adapter = new ArrayAdapter< String >(this, android.R.layout.simple_list_item_1, aps);
-					ap_lv.setAdapter(adapter);
-					ap_lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+					mainFragment.ap_lv.setAdapter(adapter);
+					mainFragment.ap_lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 						@Override
 						public void onItemClick(AdapterView< ? > parent, View view, int position, long id) {
 							final String TAG = "onItemClick";
@@ -683,7 +755,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 					wfManager.startScan();                         // APをスキャン
 					apList = wfManager.getScanResults();        // スキャン結果を取得
 					int tSize = apList.size();
-					list_up_count_tv.setText(tSize + "件");
+					mainFragment.list_up_count_tv.setText(tSize + "件");
 					;  //リストアップ件数
 					dbMsg += "," + tSize + "件";
 					retStr = "Student Id" + ",Record Time" + ",SSID" + ",BSSID" + ",frequency[MHz]" + ",level[dBm]" + ",capabilities" +                    //APIL1
@@ -792,9 +864,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 		 	 	 ///GPSで表示された座標が正しいか確認し、修正する機能です
 	public void presentLocation(){
-		String titolStr = "現在作成中";
-		String mggStr = "GPSで表示された座標が正しいか確認し、修正する機能です";
-		messageShow(titolStr, mggStr);
+		if(webFragment ==null){
+			webFragment = new webFragment();       		//web画面
+		}
+		FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();		// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+		transaction.replace(R.id.container, webFragment);//		transaction.add(R.id.container, myPreferenceFragment);		// 新しく追加を行うのでaddを使用します
+		transaction.add(R.id.container, webFragment.createInstance("https://www.google.co.jp/maps/@34.3804346,132.4822675,15z",""));
+		transaction.commit();  		// 最後にcommitを使用することで変更を反映します
+		fragmentNo = webFragmentNo;
+		fab.setVisibility(View.GONE);
 	}
 
 	public void getNowConectInfo() {                //接続先情報
@@ -1496,17 +1574,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
 	//GPS/////////////////////////////////////////////////////////////////////////////////////////////////
-	LocationManager locationManager;
-	double latitudeVal = -1;// 緯度の表示
-	String latitudeStr = "";
-	double longitudeVal = -1;       // 経度の表示
-	String LongtudeStr = "";
-	double accuracyVal = -1;                //精度
-	String accuracyStr = "";
-	double altitudeVal = -1;                //標高
-	String altitudeStr = "";
-	double pinpointingTimeVal = 0;                //測位時刻
-	String pinpointingTimeValStr = "";
+
+	public void getGPSDatas() {
+		int accessFineLocation = -1;
+		accessFineLocation = ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION); //ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+		if ( accessFineLocation != PackageManager.PERMISSION_GRANTED ) {
+			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION ,}, rp_getGPSInfo);
+		} else {
+			locationStart();
+			locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, rp_getGPSInfo, 50, ( LocationListener ) this);
+		}
+	}
 
 	private void locationStart() {
 		Log.d("debug", "locationStart()");
@@ -1539,33 +1617,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 		Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 		writeLocationInfo(lastKnownLocation);
-
-		getWiFiDatas();
 	}
 
 	public void writeLocationInfo(Location location) {
 		if ( location != null ) {
 			latitudeVal = location.getLatitude();
 			latitudeStr = "Latitude:" + latitudeVal;// 緯度の表示
-			latitude_tv.setText(":" + latitudeVal);
 
 			longitudeVal = location.getLongitude();       // 経度の表示
 			LongtudeStr = "Longtude:" + longitudeVal;
-			longitude_tv.setText("/" + longitudeVal);
 
 			altitudeVal = location.getAltitude();                //標高
 			altitudeStr = "Altitude:" + altitudeVal;
-			altitude_tv.setText("/" + altitudeVal + "m");
 
 			accuracyVal = location.getAccuracy();                //精度
 			accuracyStr = "Accuracy:" + accuracyVal;
-			accuracy_tv.setText(";" + accuracyVal);
 
 			pinpointingTimeVal = location.getTime();                //測位時刻
 			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");  //yyyy-MM-dd HH:mm:ss.SSS
 			pinpointingTimeValStr = df.format(pinpointingTimeVal);
-			timestanp_tv.setText("" + pinpointingTimeValStr);
-			pinpointingTimeValStr = "Altitude:" + pinpointingTimeValStr;
+			pinpointingTimeValStr = pinpointingTimeValStr;
 		}
 	}
 
@@ -1621,8 +1692,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 		final String TAG = "sendAPData";
 		String dbMsg = "";//"service=" + service.about();
 		date = new Date(System.currentTimeMillis());
-		send_time_tv.setText(df.format(date));
-		accountName_tv.setText(accountName);
+		mainFragment.send_time_tv.setText(df.format(date));
+		mainFragment.accountName_tv.setText(accountName);
 		FILE_TITLE = (student_id+ "_" + dffn.format(date) + ".csv").toString();
 		if ( service == null ) {                                                                                //orgは onStartで
 			conectReady();
@@ -1944,28 +2015,26 @@ hkuwayama@coresoft-net.co.jp        com.example.hkuwayama.nuloger
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	//http://m-shige1979.hatenablog.com/entry/2015/01/17/080000
-	private int count = 0;
-
-	private MyTimerTask timerTask = null;
-	private Timer timer = null;
-	private Handler handler = new Handler();
-
-	// タイマータスク用のクラス
-	class MyTimerTask extends TimerTask {
-		@Override
-		public void run() {
-			handler.post(new Runnable() {
-				public void run() {
-					final String TAG = "MyTimerTask";
-					String dbMsg = "開始";
-					try {
-						sendAPData();
-					} catch (Exception er) {
-						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
-					}
-					myLog(TAG, dbMsg);
-				}
-			});
-		}
-	}
+//	public MyTimerTask timerTask = null;
+//	public Timer timer = null;
+//	private Handler handler = new Handler();
+//
+//	// タイマータスク用のクラス
+//	 class MyTimerTask extends TimerTask {
+//		@Override
+//		public void run() {
+//			handler.post(new Runnable() {
+//				public void run() {
+//					final String TAG = "MyTimerTask";
+//					String dbMsg = "開始";
+//					try {
+//						sendAPData();
+//					} catch (Exception er) {
+//						Log.e(TAG, dbMsg + ";でエラー発生；" + er);
+//					}
+//				myLog(TAG, dbMsg);
+//				}
+//			});
+//		}
+//	}
 }
